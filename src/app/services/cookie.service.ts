@@ -48,7 +48,7 @@ export class CookieService {
    */
   deleteCookie(name: string, path: string = '/'): void {
     // Set cookie expiration to past date to delete it
-    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path}`;
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
   }
 
   /**

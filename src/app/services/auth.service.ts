@@ -133,6 +133,5 @@ export class AuthService {
 
   logout(): void {
     this.cookieService.deleteCookie(this.tokenKey);
-    this.currentUserSubject.next(null);
   }
 }

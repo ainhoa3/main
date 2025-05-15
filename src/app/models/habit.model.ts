@@ -1,8 +1,10 @@
+import { Environment } from './task.model';
+
 export interface Habit {
   id: number;
   title: string;
   description: string;
-  environment: string;
+  environment: Environment;
   importance: number;
   priority: number;
 }
@@ -10,7 +12,7 @@ export interface Habit {
 export interface HabitCreatingDTO {
   title: string;
   description: string;
-  environment: string;
+  environment: Environment;
   importance: number;
   priority: number;
 }
@@ -18,7 +20,7 @@ export interface HabitCreatingDTO {
 export interface HabitUpdatingDTO {
   title: string;
   description: string;
-  environment: string;
+  environment: Environment;
   importance: number;
   priority: number;
 }
@@ -26,6 +28,6 @@ export interface HabitUpdatingDTO {
 export interface HabitPreview {
   id: number;
   title: string;
-  environment: string;
+  environment: Environment;
   priority: number;
 }

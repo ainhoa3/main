@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from './auth.service';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { Habit, HabitCreatingDTO, HabitUpdatingDTO, HabitPreview } from '../models/habit.model';
+import { Environment } from '../models/task.model';
 
 @Injectable({
   providedIn: 'root'
@@ -23,25 +24,40 @@ export class HabitService {
   // Get habits of the day preview
   getHabitsOfTheDayPreview(): Observable<HabitPreview[]> {
     const token = this.authService.getToken();
-    return this.http.get<HabitPreview[]>(`${this.apiUrl}/GetHabitsOfTheDayPreview`, {
+    return this.http.get<any[]>(`${this.apiUrl}/GetHabitsOfTheDayPreview`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      map(habits => habits.map(habit => ({
+        ...habit,
+        environment: habit.environment === 'work' ? Environment.WORK : Environment.PERSONAL
+      })))
+    );
   }
 
   // Get a specific habit
   getHabit(id: number): Observable<Habit> {
     const token = this.authService.getToken();
-    return this.http.get<Habit>(`${this.apiUrl}/GetAHabit/${id}`, {
+    return this.http.get<any>(`${this.apiUrl}/GetAHabit/${id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      map(habit => ({
+        ...habit,
+        environment: habit.environment === 'work' ? Environment.WORK : Environment.PERSONAL
+      }))
+    );
   }
 
   // Search habits by keyword
   searchHabits(search: string): Observable<HabitPreview[]> {
     const token = this.authService.getToken();
-    return this.http.get<HabitPreview[]>(`${this.apiUrl}/Search/${search}`, {
+    return this.http.get<any[]>(`${this.apiUrl}/Search/${search}`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      map(habits => habits.map(habit => ({
+        ...habit,
+        environment: habit.environment === 'work' ? Environment.WORK : Environment.PERSONAL
+      })))
+    );
   }
 
   // Update a habit

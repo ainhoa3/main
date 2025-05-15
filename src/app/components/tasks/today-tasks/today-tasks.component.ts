@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TaskService } from '../../../services/task.service';
-import { TaskPreview, Task, Environment, TaskUpdatingDTO } from '../../../models/task.model';
+import { TaskPreview, Environment, numberToEnvironment, environmentToNumber, getEnvironmentString } from '../../../models/task.model';
 import { TaskDetailComponent } from '../task-detail/task-detail.component';
 
 @Component({
@@ -12,10 +12,16 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
   template: `
     <div class="today-tasks-container">
       <h2 class="section-title">Tareas de Hoy</h2>
+      <div class="tasks-filters">
+        <button class="btn btn-filter" (click)="filterEnvironment(Environment.WORK)" [ngClass]="{'selected': currentFilter === Environment.WORK}">Trabajo</button>
+        <button class="btn btn-filter" (click)="filterEnvironment(Environment.PERSONAL)" [ngClass]="{'selected': currentFilter === Environment.PERSONAL}">Personal</button>
+        <button class="btn btn-filter" (click)="clearFilter()" [ngClass]="{'selected': currentFilter === null}">Todos</button>
+      </div>
       <div class="tasks-list" *ngIf="tasks.length > 0">
-        <div *ngFor="let task of tasks" 
+        <div *ngFor="let task of filteredTasks" 
           class="task-item" 
           [class.completed]="task.done" 
+          [class.selected]="selectedTaskId === task.id"
           [ngClass]="getPriorityClass(task.priority)"
           (click)="openTaskDetail(task.id)">
           <div class="task-checkbox">
@@ -28,9 +34,12 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
           </div>
           <div class="task-content">
             <div class="task-title" [ngClass]="{'completed-title': task.done}">{{ task.title }}</div>
-            <div class="task-environment">{{ task.environment }}</div>
+            <div class="task-environment">{{ getEnvironmentString(task.environment) }}</div>
           </div>
         </div>
+      </div>
+      <div class="no-tasks" *ngIf="filteredTasks.length === 0 && tasks.length > 0">
+        <p>No hay tareas en este filtro</p>
       </div>
       <div class="no-tasks" *ngIf="tasks.length === 0">
         <p>No hay tareas para hoy</p>
@@ -38,8 +47,8 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
     </div>
     
     <app-task-detail 
-      *ngIf="showTaskDetail" 
-      [taskId]="selectedTaskId" 
+      *ngIf="showTaskDetail && selectedTaskId !== null" 
+      [taskId]="selectedTaskId!" 
       (close)="closeTaskDetail()"
       (taskUpdated)="refreshTasks()"
     ></app-task-detail>
@@ -124,17 +133,63 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
       opacity: 0.7;
     }
 
+    .selected {
+      background-color: var(--success-color-light);
+      border-left: 3px solid var(--success-color);
+    }
+
     .no-tasks {
       text-align: center;
       padding: 2rem;
       color: var(--text-secondary);
     }
+
+    .tasks-filters {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .tasks-filters .btn-filter {
+      background-color: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+    }
+
+    .tasks-filters .btn-filter.selected {
+      background-color: #2ecc71;
+      color: white;
+    }
   `]
 })
 export class TodayTasksComponent implements OnInit {
+  Environment = Environment;
+
+  filterEnvironment(environment: Environment): void {
+    this.currentFilter = environment;
+    const environmentNumber = environmentToNumber(environment);
+    this.filteredTasks = this.allTasks.filter(task => environmentToNumber(task.environment) === environmentNumber);
+    // Always keep tasks list populated to prevent hiding buttons
+    this.tasks = this.filteredTasks;
+    console.log('Filtering tasks:', { environment, filteredTasksCount: this.filteredTasks.length });
+  }
+
+  clearFilter(): void {
+    this.currentFilter = null;
+    this.filteredTasks = this.allTasks;
+    this.tasks = this.allTasks;
+  }
+
+  getEnvironmentString(environment: Environment): string {
+    return getEnvironmentString(environment);
+  }
+
+  allTasks: TaskPreview[] = [];
+  filteredTasks: TaskPreview[] = [];
+  currentFilter: Environment | null = null;
   tasks: TaskPreview[] = [];
   showTaskDetail: boolean = false;
-  selectedTaskId: number = 0;
+  selectedTaskId: number | null = null;
 
   constructor(private taskService: TaskService) {}
 
@@ -144,10 +199,12 @@ export class TodayTasksComponent implements OnInit {
 
   loadTasks(): void {
     this.taskService.getTasksOfTheDayPreview().subscribe({
-      next: (tasks) => {
+      next: (tasks: TaskPreview[]) => {
+        this.allTasks = tasks;
+        this.filteredTasks = tasks;
         this.tasks = tasks;
       },
-      error: (error) => {
+      error: (error: Error) => {
         console.error('Error loading tasks:', error);
       }
     });
@@ -165,9 +222,9 @@ export class TodayTasksComponent implements OnInit {
   }
 
   getPriorityClass(priority: number): string {
-    if (priority >= 7) {
+    if (priority > 3) {
       return 'priority-high';
-    } else if (priority >= 4) {
+    } else if (priority >= 2) {
       return 'priority-medium';
     } else {
       return 'priority-low';
@@ -181,6 +238,7 @@ export class TodayTasksComponent implements OnInit {
 
   closeTaskDetail(): void {
     this.showTaskDetail = false;
+    this.selectedTaskId = null;
   }
 
   refreshTasks(): void {

@@ -1,0 +1,29 @@
+<div class="habits-container">
+  <app-header [pageName]="'Hábitos'"></app-header>
+  
+  <div class="habits-content">
+    <div class="habits-header">
+      <h1>Mis Hábitos</h1>
+      <button class="btn btn-primary" routerLink="/create-habit">Nuevo Hábito</button>
+    </div>
+    
+    <div class="habits-filters">
+      <button class="btn btn-filter" (click)="filterEnvironment(Environment.WORK)" [ngClass]="{'selected': currentFilter === Environment.WORK}">Trabajo</button>
+      <button class="btn btn-filter" (click)="filterEnvironment(Environment.PERSONAL)" [ngClass]="{'selected': currentFilter === Environment.PERSONAL}">Personal</button>
+      <button class="btn btn-filter" (click)="clearFilter()" [ngClass]="{'selected': currentFilter === null}">Todos</button>
+    </div>
+    <div class="habits-list" *ngIf="filteredHabits.length > 0">
+      <div *ngFor="let habit of filteredHabits" 
+        class="habit-item"
+        [ngClass]="getPriorityClass(habit.priority)">
+        <h3>{{ habit.title }}</h3>
+        <div class="habit-environment">{{ getEnvironmentString(habit.environment) }}</div>
+      </div>
+    </div>
+    
+    <div class="no-habits" *ngIf="habits.length === 0">
+      <p>No tienes hábitos configurados</p>
+      <button class="btn btn-primary" routerLink="/create-habit">Crear mi primer hábito</button>
+    </div>
+  </div>
+</div>

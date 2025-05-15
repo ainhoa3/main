@@ -19,7 +19,7 @@ import { Task, Environment, TaskUpdatingDTO } from '../../../models/task.model';
           <div *ngIf="!isEditing && task" class="task-view">
             <h3 class="task-title">{{ task.title }}</h3>
             <div class="task-meta">
-              <span class="task-environment">{{ task.environment | titlecase }}</span>
+              <span class="task-environment">{{ getEnvironmentString(task.environment) }}</span>
               <span class="task-date">Fecha: {{ task.dueDate | date:'dd/MM/yyyy' }}</span>
             </div>
             <p class="task-description">{{ task.description }}</p>
@@ -234,6 +234,10 @@ export class TaskDetailComponent implements OnInit {
         console.error('Error loading task:', error);
       }
     });
+  }
+
+  getEnvironmentString(environment: Environment): string {
+    return environment === Environment.WORK ? 'Trabajo' : 'Personal';
   }
 
   initForm(): void {

@@ -39,7 +39,7 @@ export class TaskService {
   // Mark a task as done
   markTaskAsDone(id: number): Observable<Task> {
     const token = this.authService.getToken();
-    return this.http.get<Task>(`${this.apiUrl}/Donetask/${id}`, {
+    return this.http.get<Task>(`${this.apiUrl}/MarkAsDone/${id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
   }
