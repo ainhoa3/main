@@ -68,7 +68,7 @@ export class TaskService {
   // Get extra tasks
   getExtraTasks(): Observable<TaskPreview[]> {
     const token = this.authService.getToken();
-    return this.http.get<TaskPreview[]>(`${this.apiUrl}/ExtraTasks`, {
+    return this.http.get<TaskPreview[]>(`${this.apiUrl}/GetExtraTasks`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
   }

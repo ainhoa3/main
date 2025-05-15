@@ -55,16 +55,6 @@ import { Router } from '@angular/router';
           </div>
         </div>
         
-        <div class="form-row">
-          <div class="form-group half">
-            <label for="priority">Prioridad (1-10)</label>
-            <input type="number" id="priority" formControlName="priority" min="1" max="10" class="form-control">
-            <div *ngIf="taskForm.get('priority')?.invalid && taskForm.get('priority')?.touched" class="error-message">
-              Valor entre 1 y 10
-            </div>
-          </div>
-        </div>
-        
         <div class="form-actions">
           <button type="button" class="btn btn-outline" (click)="onCancel()">Cancelar</button>
           <button type="submit" class="btn btn-primary" [disabled]="taskForm.invalid">Crear Tarea</button>

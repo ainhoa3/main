@@ -26,11 +26,11 @@ import { Task, Environment, TaskUpdatingDTO } from '../../../models/task.model';
             <div class="task-metrics">
               <div class="metric">
                 <span class="label">Importancia:</span>
-                <span class="value">{{ task.importance }}/10</span>
+                <span class="value">{{ task.importance }}/5</span>
               </div>
               <div class="metric">
                 <span class="label">Prioridad:</span>
-                <span class="value">{{ task.priority }}/10</span>
+                <span class="value">{{ task.priority }}%</span>
               </div>
               <div class="metric">
                 <span class="label">Estado:</span>
@@ -69,16 +69,17 @@ import { Task, Environment, TaskUpdatingDTO } from '../../../models/task.model';
             </div>
             
             <div class="form-row">
-              <div class="form-group half">
-                <label for="importance">Importancia (1-10)</label>
-                <input type="number" id="importance" formControlName="importance" min="1" max="10" class="form-control">
-              </div>
-              
-              <div class="form-group half">
-                <label for="priority">Prioridad (1-10)</label>
-                <input type="number" id="priority" formControlName="priority" min="1" max="10" class="form-control">
-              </div>
+          <div class="form-group">
+            <label>Importancia</label>
+            <div class="star-rating">
+              <span *ngFor="let star of [1, 2, 3, 4, 5]" 
+                    (click)="setImportance(star)" 
+                    class="star">
+                {{ star <= taskForm.get('importance')?.value ? '★' : '☆' }}
+              </span>
             </div>
+          </div>
+        </div>
             
             <div class="form-group checkbox-group">
               <label class="checkbox">
@@ -242,8 +243,7 @@ export class TaskDetailComponent implements OnInit {
         description: [this.task.description],
         environment: [this.task.environment],
         dueDate: [this.formatDateForInput(this.task.dueDate)],
-        importance: [this.task.importance, [Validators.min(1), Validators.max(10)]],
-        priority: [this.task.priority, [Validators.min(1), Validators.max(10)]],
+        importance: [this.task.importance, [Validators.min(1), Validators.max(5)]],
         done: [this.task.done]
       });
     }
@@ -254,6 +254,9 @@ export class TaskDetailComponent implements OnInit {
     return d.toISOString().split('T')[0];
   }
 
+  setImportance(stars: number): void {
+    this.taskForm?.get('importance')?.setValue(stars);
+  }
   startEditing(): void {
     this.isEditing = true;
     this.initForm();
