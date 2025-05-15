@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TaskService } from '../../../services/task.service';
@@ -216,7 +216,7 @@ export class TaskDetailComponent implements OnInit {
   Environment = Environment;
 
   constructor(
-    private taskService: TaskService,
+    @Inject(TaskService) private taskService: TaskService,
     private fb: FormBuilder
   ) {}
 
