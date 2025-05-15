@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TaskService } from '../../../services/task.service';
@@ -17,14 +17,19 @@ import { Router } from '@angular/router';
         <div class="form-group">
           <label for="title">Título</label>
           <input type="text" id="title" formControlName="title" class="form-control">
-          <div *ngIf="taskForm.get('title')?.invalid && taskForm.get('title')?.touched" class="error-message">
-            El título es requerido
+          <div *ngIf="taskForm.get('title')?.invalid && (taskForm.get('title')?.dirty || taskForm.get('title')?.touched)" class="error-message">
+            <div *ngIf="taskForm.get('title')?.errors?.['required']">El título es requerido</div>
+            <div *ngIf="taskForm.get('title')?.errors?.['minlength']">El título debe tener al menos 3 caracteres</div>
+            <div *ngIf="taskForm.get('title')?.errors?.['maxlength']">El título no puede tener más de 100 caracteres</div>
           </div>
         </div>
         
         <div class="form-group">
           <label for="description">Descripción</label>
           <textarea id="description" formControlName="description" class="form-control" rows="4"></textarea>
+          <div *ngIf="taskForm.get('description')?.invalid && (taskForm.get('description')?.dirty || taskForm.get('description')?.touched)" class="error-message">
+            La descripción es requerida
+          </div>
         </div>
         
         <div class="form-row">
@@ -34,11 +39,17 @@ import { Router } from '@angular/router';
               <option [value]="Environment.WORK">Trabajo</option>
               <option [value]="Environment.PERSONAL">Personal</option>
             </select>
+            <div *ngIf="taskForm.get('environment')?.invalid && (taskForm.get('environment')?.dirty || taskForm.get('environment')?.touched)" class="error-message">
+              Selecciona un entorno
+            </div>
           </div>
           
           <div class="form-group half">
             <label for="date">Fecha de entrega</label>
             <input type="date" id="date" formControlName="date" class="form-control">
+            <div *ngIf="taskForm.get('date')?.invalid && (taskForm.get('date')?.dirty || taskForm.get('date')?.touched)" class="error-message">
+              Selecciona una fecha de entrega
+            </div>
           </div>
         </div>
         
@@ -55,9 +66,13 @@ import { Router } from '@angular/router';
           </div>
         </div>
         
+        <div *ngIf="formError" class="global-error-message">
+          {{ formError }}
+        </div>
+
         <div class="form-actions">
           <button type="button" class="btn btn-outline" (click)="onCancel()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" [disabled]="taskForm.invalid">Crear Tarea</button>
+          <button type="submit" class="btn btn-primary" [disabled]="taskForm.invalid || submitting">Crear Tarea</button>
         </div>
       </form>
 
@@ -65,77 +80,105 @@ import { Router } from '@angular/router';
         <div class="spinner"></div>
         <p>Guardando...</p>
       </div>
-
-      <div *ngIf="successMessage" class="success-message">
-        <p>{{ successMessage }}</p>
-      </div>
     </div>
   `,
   styles: [`
     .create-task-container {
-      padding: 2rem;
-      max-width: 800px;
+      max-width: 600px;
       margin: 0 auto;
+      padding: 20px;
     }
-
-    h1 {
-      margin-bottom: 1.5rem;
-    }
-
+    
     .task-form {
-      background-color: white;
-      padding: 1.5rem;
-      border-radius: var(--border-radius-md);
-      box-shadow: var(--shadow-md);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
     }
-
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
     .form-row {
       display: flex;
-      gap: 1rem;
-      width: 100%;
+      gap: 15px;
     }
-
-    .half {
+    
+    .form-row .form-group.half {
       flex: 1;
     }
-
+    
+    .star-rating .star {
+      cursor: pointer;
+      font-size: 24px;
+      color: #ffc107;
+    }
+    
     .form-actions {
       display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
-      margin-top: 1.5rem;
+      justify-content: space-between;
+      margin-top: 20px;
     }
-
+    
+    .btn-primary:disabled {
+      background-color: #6c757d;
+      color: #fff;
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+    
     .loading-indicator {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      margin-top: 2rem;
+      margin-top: 20px;
     }
-
+    
     .spinner {
-      border: 4px solid rgba(0, 0, 0, 0.1);
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
       border-radius: 50%;
-      border-top: 4px solid var(--primary-color);
       width: 40px;
       height: 40px;
       animation: spin 1s linear infinite;
-      margin-bottom: 1rem;
     }
-
+    
+    .error-message {
+      color: #dc3545;
+      font-size: 0.875rem;
+      margin-top: 5px;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    .global-error-message {
+      background-color: #f8d7da;
+      color: #721c24;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      border: 1px solid #f5c6cb;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+      font-weight: 500;
+    }
 
-    .success-message {
+    .global-error-message {
       margin-top: 1.5rem;
       text-align: center;
       padding: 1rem;
-      background-color: rgba(46, 204, 113, 0.1);
+      background-color: rgba(255, 0, 0, 0.1);
       border-radius: var(--border-radius-sm);
-      color: var(--success-color);
+      color: var(--error-color);
       font-weight: 500;
     }
 
@@ -147,58 +190,164 @@ import { Router } from '@angular/router';
     }
   `]
 })
-export class CreateTaskComponent implements OnInit {
-  taskForm!: FormGroup;
+export class CreateTaskComponent implements OnInit, AfterViewInit {
+  taskForm: FormGroup;
   Environment = Environment;
   submitting = false;
   successMessage = '';
+  formError = '';
 
   constructor(
     private fb: FormBuilder,
     private taskService: TaskService,
     private router: Router
-  ) {}
-
-  ngOnInit(): void {
+  ) {
     this.taskForm = this.fb.group({
-      title: ['', [Validators.required]],
-      description: [''],
-      environment: [Environment.PERSONAL, [Validators.required]],
-      date: ['', [Validators.required]],
-      importance: [3, [Validators.required, Validators.min(1), Validators.max(5)]],
-      priority: ['', [Validators.required, Validators.min(1), Validators.max(10)]]
+      title: ['', [
+        Validators.required, 
+        Validators.minLength(3), 
+      ]], 
+      description: ['', [
+        Validators.required
+      ]], 
+      environment: [Environment.PERSONAL, [
+        Validators.required
+      ]], 
+      date: ['', [
+        Validators.required
+      ]], 
+      importance: [''], 
+      priority: [''] 
+    });
+
+    // Add value change listeners for debugging
+    this.taskForm.valueChanges.subscribe(value => {
+      console.log('Form value changed:', value);
+    });
+
+    this.taskForm.statusChanges.subscribe(status => {
+      console.log('Form status changed:', status);
     });
   }
 
+  // Helper method to get today's date in YYYY-MM-DD format
+  private getTodayDate(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  ngOnInit(): void {
+    // Optional additional initialization if needed
+  }
+
+  ngAfterViewInit(): void {
+    console.log('CreateTaskComponent: AfterViewInit');
+    console.log('Form instance:', this.taskForm);
+    
+    // Detailed validation logging
+    Object.keys(this.taskForm.controls).forEach(key => {
+      const control = this.taskForm.get(key);
+      console.log(`Control ${key}:`);
+      console.log('  Value:', control?.value);
+      console.log('  Valid:', control?.valid);
+      console.log('  Errors:', control?.errors);
+      console.log('  Touched:', control?.touched);
+      console.log('  Dirty:', control?.dirty);
+    });
+    
+    // Manually trigger validation to ensure form is ready
+    this.taskForm.updateValueAndValidity();
+    
+    // Log form details after view initialization
+    console.log('Form valid after view init:', this.taskForm.valid);
+    console.log('Form value after view init:', this.taskForm.value);
+    console.log('Form errors after view init:', this.taskForm.errors);
+  }
+
   setImportance(stars: number): void {
+    if (stars < 1 ) {
+      stars = 1;
+    }
     this.taskForm.get('importance')?.setValue(stars);
   }
 
   onSubmit(): void {
-    if (this.taskForm.valid) {
-      const taskData: TaskCreatingDTO = {
-        title: this.taskForm.get('title')?.value,
-        description: this.taskForm.get('description')?.value || '',
-        environment: this.taskForm.get('environment')?.value,
-        importance: this.taskForm.get('importance')?.value,
-        dueDate: this.taskForm.get('date')?.value, 
-      };
+    console.log('onSubmit called');
+    console.log('Form valid:', this.taskForm.valid);
+    console.log('Form value:', this.taskForm.value);
+    console.log('Form errors:', this.taskForm.errors);
+    
+    this.formError = '';
+    
+    // Detailed validation logging
+    const invalidControls: string[] = [];
+    Object.keys(this.taskForm.controls).forEach(key => {
+      const control = this.taskForm.get(key);
+      control?.markAsTouched();
       
-      this.taskService.createTask(taskData).subscribe({
-        next: () => {
-          this.router.navigate(['/tasks']);
-        },
-        error: (error) => {
-          console.error('Error creating task', error);
-        }
-      });
-    } else {
-      // Mark all fields as touched to trigger validation messages
-      Object.keys(this.taskForm.controls).forEach(key => {
+      // Detailed control validation logging
+      console.log(`Control ${key}:`);
+      console.log('  Value:', control?.value);
+      console.log('  Valid:', control?.valid);
+      console.log('  Errors:', control?.errors);
+      console.log('  Touched:', control?.touched);
+      console.log('  Dirty:', control?.dirty);
+      
+      // Track invalid controls
+      if (!control?.valid) {
+        invalidControls.push(key);
+      }
+    });
+    
+    // If form is invalid, log specific invalid controls
+    if (!this.taskForm.valid) {
+      console.error('Invalid controls:', invalidControls);
+      
+      // Generate detailed error message
+      const errorMessages = invalidControls.map(key => {
         const control = this.taskForm.get(key);
-        control?.markAsTouched();
+        if (control?.errors) {
+          if (control.errors['required']) return `${key} is required`;
+          if (control.errors['minlength']) return `${key} is too short`;
+          if (control.errors['maxlength']) return `${key} is too long`;
+          if (control.errors['min']) return `${key} is below minimum value`;
+          if (control.errors['max']) return `${key} is above maximum value`;
+        }
+        return `${key} is invalid`;
       });
+      
+      this.formError = `Por favor, corrija los siguientes campos: ${errorMessages.join(', ')}`;
+      console.error('Form validation errors:', errorMessages);
+      return;
     }
+    
+    // Proceed with form submission
+    this.submitting = true;
+    const taskData: TaskCreatingDTO = {
+      title: this.taskForm.get('title')?.value.trim(),
+      description: this.taskForm.get('description')?.value.trim(),
+      environment: this.taskForm.get('environment')?.value,
+      importance: this.taskForm.get('importance')?.value,
+      dueDate: this.taskForm.get('date')?.value, 
+    };
+    
+    console.log('Submitting task data:', taskData);
+    
+    this.taskService.createTask(taskData).subscribe({
+      next: (response) => {
+        console.log('Task created successfully', response);
+        this.submitting = false;
+        this.router.navigate(['/tasks']);
+      },
+      error: (error) => {
+        console.error('Full error creating task', error);
+        this.submitting = false;
+        this.formError = 'Error al crear la tarea. Por favor, inténtalo de nuevo.';
+      }
+    });
   }
 
   onCancel(): void {

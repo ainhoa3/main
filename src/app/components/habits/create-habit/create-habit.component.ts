@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { HabitService } from '../../../services/habit.service';
 import { HabitCreatingDTO } from '../../../models/habit.model';
 import { Router } from '@angular/router';
+import { Environment } from '../../../models/task.model';
 
 @Component({
   selector: 'app-create-habit',
@@ -17,45 +18,61 @@ import { Router } from '@angular/router';
         <div class="form-group">
           <label for="title">Título</label>
           <input type="text" id="title" formControlName="title" class="form-control">
-          <div *ngIf="habitForm.get('title')?.invalid && habitForm.get('title')?.touched" class="error-message">
-            El título es requerido
+          <div *ngIf="habitForm.get('title')?.invalid && (habitForm.get('title')?.dirty || habitForm.get('title')?.touched)" class="error-message">
+            <div *ngIf="habitForm.get('title')?.errors?.['required']">El título es requerido</div>
+            <div *ngIf="habitForm.get('title')?.errors?.['minlength']">El título debe tener al menos 3 caracteres</div>
           </div>
         </div>
         
         <div class="form-group">
           <label for="description">Descripción</label>
           <textarea id="description" formControlName="description" class="form-control" rows="4"></textarea>
+          <div *ngIf="habitForm.get('description')?.invalid && (habitForm.get('description')?.dirty || habitForm.get('description')?.touched)" class="error-message">
+            La descripción es requerida
+          </div>
         </div>
         
         <div class="form-group">
           <label for="environment">Entorno</label>
           <select id="environment" formControlName="environment" class="form-control">
-            <option value="work">Trabajo</option>
-            <option value="personal">Personal</option>
+            <option [value]="Environment.WORK">Trabajo</option>
+            <option [value]="Environment.PERSONAL">Personal</option>
           </select>
+          <div *ngIf="habitForm.get('environment')?.invalid && (habitForm.get('environment')?.dirty || habitForm.get('environment')?.touched)" class="error-message">
+            Selecciona un entorno
+          </div>
         </div>
         
         <div class="form-row">
-          <div class="form-group half">
-            <label for="importance">Importancia (1-10)</label>
-            <input type="number" id="importance" formControlName="importance" min="1" max="10" class="form-control">
-            <div *ngIf="habitForm.get('importance')?.invalid && habitForm.get('importance')?.touched" class="error-message">
-              Valor entre 1 y 10
+          <div class="form-group">
+            <label>Importancia</label>
+            <div class="star-rating">
+              <span *ngFor="let star of [1, 2, 3, 4, 5]" 
+                    (click)="setImportance(star)" 
+                    class="star">
+                {{ star <= habitForm.get('importance')?.value ? '★' : '☆' }}
+              </span>
             </div>
           </div>
-          
+          <div *ngIf="habitForm.get('importance')?.invalid && (habitForm.get('importance')?.dirty || habitForm.get('importance')?.touched)" class="error-message">
+            Selecciona un valor entre 1 y 10
+          </div>
           <div class="form-group half">
             <label for="priority">Prioridad (1-10)</label>
             <input type="number" id="priority" formControlName="priority" min="1" max="10" class="form-control">
-            <div *ngIf="habitForm.get('priority')?.invalid && habitForm.get('priority')?.touched" class="error-message">
-              Valor entre 1 y 10
+            <div *ngIf="habitForm.get('priority')?.invalid && (habitForm.get('priority')?.dirty || habitForm.get('priority')?.touched)" class="error-message">
+              Selecciona un valor entre 1 y 10
             </div>
           </div>
         </div>
         
+        <div *ngIf="formError" class="global-error-message">
+          {{ formError }}
+        </div>
+
         <div class="form-actions">
           <button type="button" class="btn btn-outline" (click)="onCancel()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" [disabled]="habitForm.invalid">Crear Hábito</button>
+          <button type="submit" class="btn btn-primary" [disabled]="habitForm.invalid || submitting">Crear Hábito</button>
         </div>
       </form>
 
@@ -95,6 +112,12 @@ import { Router } from '@angular/router';
 
     .half {
       flex: 1;
+    }
+
+    .star-rating .star {
+      cursor: pointer;
+      font-size: 24px;
+      color: #ffc107;
     }
 
     .form-actions {
@@ -149,6 +172,8 @@ export class CreateHabitComponent {
   habitForm: FormGroup;
   submitting = false;
   successMessage = '';
+  formError = '';
+  Environment = Environment;
 
   constructor(
     private fb: FormBuilder,
@@ -156,20 +181,28 @@ export class CreateHabitComponent {
     private router: Router
   ) {
     this.habitForm = this.fb.group({
-      title: ['', Validators.required],
-      description: [''],
-      environment: ['personal'],
-      importance: [5, [Validators.required, Validators.min(1), Validators.max(10)]],
-      priority: [5, [Validators.required, Validators.min(1), Validators.max(10)]]
+      title: ['', [Validators.required, Validators.minLength(3)]],
+      description: ['', [Validators.required]],
+      environment: [Environment.PERSONAL, [Validators.required]],
+      importance: [''],
+      priority: ['']
     });
   }
 
   onSubmit(): void {
+    this.formError = '';
+    
+    // Mark all fields as touched to trigger validation messages
+    Object.keys(this.habitForm.controls).forEach(key => {
+      const control = this.habitForm.get(key);
+      control?.markAsTouched();
+    });
+    
     if (this.habitForm.valid) {
       this.submitting = true;
       const habitData: HabitCreatingDTO = {
-        title: this.habitForm.value.title,
-        description: this.habitForm.value.description,
+        title: this.habitForm.value.title.trim(),
+        description: this.habitForm.value.description.trim(),
         environment: this.habitForm.value.environment,
         importance: this.habitForm.value.importance,
         priority: this.habitForm.value.priority
@@ -179,33 +212,29 @@ export class CreateHabitComponent {
         next: () => {
           this.submitting = false;
           this.successMessage = '¡Hábito creado con éxito!';
-          
-          // Reset form after success
           setTimeout(() => {
-            this.habitForm.reset({
-              environment: 'personal',
-              importance: 5,
-              priority: 5
-            });
-            this.successMessage = '';
+            this.router.navigate(['/habits']);
           }, 2000);
         },
         error: (error) => {
           this.submitting = false;
+          this.formError = 'Error al crear el hábito. Por favor, inténtalo de nuevo.';
           console.error('Error creating habit:', error);
-          // Handle error
         }
       });
     } else {
-      // Mark all fields as touched to trigger validation messages
-      Object.keys(this.habitForm.controls).forEach(key => {
-        const control = this.habitForm.get(key);
-        control?.markAsTouched();
-      });
+      this.formError = 'Por favor, completa todos los campos correctamente.';
     }
   }
 
   onCancel(): void {
     this.router.navigate(['/dashboard']);
+  }
+
+  setImportance(stars: number): void {
+    if (stars < 1) {
+      stars = 1;
+    }
+    this.habitForm.get('importance')?.setValue(stars);
   }
 }
