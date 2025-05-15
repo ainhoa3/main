@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { CookieService } from './cookie.service';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { CredencialesUserDTO, AuthResponse, User } from '../models/user.model';
@@ -15,7 +16,7 @@ export class AuthService {
   
   currentUser$ = this.currentUserSubject.asObservable();
   
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private cookieService: CookieService) {
     this.initializeUser();
   }
 
@@ -65,32 +66,54 @@ export class AuthService {
   }
 
   renewToken(): Observable<AuthResponse> {
-    return this.http.get<AuthResponse>(`${this.apiUrl}/RenovarToken`)
-      .pipe(
-        tap(response => {
-          this.saveToken(response.token);
-        })
-      );
+    const token = this.getToken();
+    return this.http.get<AuthResponse>(`${this.apiUrl}/RenovarToken`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).pipe(
+      tap(response => {
+        this.saveToken(response.token, response.tokenExpiration);
+      })
+    );
   }
 
   getUser(): Observable<User> {
-    return this.http.get<User>(`${this.apiUrl}/users`);
+    const token = this.getToken();
+    return this.http.get<User>(`${this.apiUrl}/users`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
   }
 
   getUserStreak(): Observable<number> {
-    return this.http.get<number>(`${this.apiUrl}/streak`);
+    const token = this.getToken();
+    return this.http.get<number>(`${this.apiUrl}/streak`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
   }
 
   addStreak(): Observable<number> {
-    return this.http.get<number>(`${this.apiUrl}/AddStrike`);
+    const token = this.getToken();
+    return this.http.get<number>(`${this.apiUrl}/AddStrike`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
   }
 
-  saveToken(token: string): void {
-    localStorage.setItem(this.tokenKey, token);
+  saveToken(token: string, expirationDate?: string): void {
+    if (expirationDate) {
+      // Calculate days until expiration
+      const expDate = new Date(expirationDate);
+      const currentDate = new Date();
+      const daysUntilExpiration = Math.ceil((expDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Save token with calculated expiration
+      this.cookieService.setCookie(this.tokenKey, token, daysUntilExpiration);
+    } else {
+      // Fallback: save token for 7 days if no expiration provided
+      this.cookieService.setCookie(this.tokenKey, token, 7);
+    }
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
+    return this.cookieService.getCookie(this.tokenKey);
   }
 
   isAuthenticated(): boolean {
@@ -109,7 +132,7 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem(this.tokenKey);
+    this.cookieService.deleteCookie(this.tokenKey);
     this.currentUserSubject.next(null);
   }
 }

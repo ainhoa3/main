@@ -9,18 +9,17 @@ export interface Task {
   description: string;
   environment: Environment;
   dueDate: Date;
-  importance: number;
-  priority: number;
+  importance: number; // 1-5 star rating
   done: boolean;
+  priority: number;
 }
 
 export interface TaskCreatingDTO {
   title: string;
-  description: string;
+  description?: string;
   environment: Environment;
-  dueDate: string;
-  importance: number;
-  priority: number;
+  dueDate?: Date; // Optional for API compatibility
+  importance: number; // 1-5 star rating
 }
 
 export interface TaskUpdatingDTO {
@@ -28,15 +27,17 @@ export interface TaskUpdatingDTO {
   description: string;
   environment: Environment;
   dueDate: string;
-  importance: number;
-  priority: number;
+  importance: number; // 1-5 star rating
   done: boolean;
+  priority: number;
 }
 
 export interface TaskPreview {
   id: number;
   title: string;
   environment: Environment;
-  priority: number;
+  importance: number; // 1-5 star rating
   done: boolean;
+  dueDate: Date;
+  priority: number;
 }

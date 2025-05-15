@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TaskService } from '../../../services/task.service';
@@ -37,20 +37,25 @@ import { Router } from '@angular/router';
           </div>
           
           <div class="form-group half">
-            <label for="dueDate">Fecha de entrega</label>
-            <input type="date" id="dueDate" formControlName="dueDate" class="form-control">
+            <label for="date">Fecha de entrega</label>
+            <input type="date" id="date" formControlName="date" class="form-control">
           </div>
         </div>
         
         <div class="form-row">
-          <div class="form-group half">
-            <label for="importance">Importancia (1-10)</label>
-            <input type="number" id="importance" formControlName="importance" min="1" max="10" class="form-control">
-            <div *ngIf="taskForm.get('importance')?.invalid && taskForm.get('importance')?.touched" class="error-message">
-              Valor entre 1 y 10
+          <div class="form-group">
+            <label>Importancia</label>
+            <div class="star-rating">
+              <span *ngFor="let star of [1, 2, 3, 4, 5]" 
+                    (click)="setImportance(star)" 
+                    class="star">
+                {{ star <= taskForm.get('importance')?.value ? '★' : '☆' }}
+              </span>
             </div>
           </div>
-          
+        </div>
+        
+        <div class="form-row">
           <div class="form-group half">
             <label for="priority">Prioridad (1-10)</label>
             <input type="number" id="priority" formControlName="priority" min="1" max="10" class="form-control">
@@ -152,8 +157,8 @@ import { Router } from '@angular/router';
     }
   `]
 })
-export class CreateTaskComponent {
-  taskForm: FormGroup;
+export class CreateTaskComponent implements OnInit {
+  taskForm!: FormGroup;
   Environment = Environment;
   submitting = false;
   successMessage = '';
@@ -162,50 +167,39 @@ export class CreateTaskComponent {
     private fb: FormBuilder,
     private taskService: TaskService,
     private router: Router
-  ) {
-    const today = new Date();
+  ) {}
+
+  ngOnInit(): void {
     this.taskForm = this.fb.group({
-      title: ['', Validators.required],
+      title: ['', [Validators.required]],
       description: [''],
-      environment: [Environment.PERSONAL],
-      dueDate: [today.toISOString().split('T')[0]],
-      importance: [5, [Validators.required, Validators.min(1), Validators.max(10)]],
-      priority: [5, [Validators.required, Validators.min(1), Validators.max(10)]]
+      environment: [Environment.PERSONAL, [Validators.required]],
+      date: ['', [Validators.required]],
+      importance: [3, [Validators.required, Validators.min(1), Validators.max(5)]],
+      priority: ['', [Validators.required, Validators.min(1), Validators.max(10)]]
     });
+  }
+
+  setImportance(stars: number): void {
+    this.taskForm.get('importance')?.setValue(stars);
   }
 
   onSubmit(): void {
     if (this.taskForm.valid) {
-      this.submitting = true;
       const taskData: TaskCreatingDTO = {
-        title: this.taskForm.value.title,
-        description: this.taskForm.value.description,
-        environment: this.taskForm.value.environment,
-        dueDate: this.taskForm.value.dueDate,
-        importance: this.taskForm.value.importance,
-        priority: this.taskForm.value.priority
+        title: this.taskForm.get('title')?.value,
+        description: this.taskForm.get('description')?.value || '',
+        environment: this.taskForm.get('environment')?.value,
+        importance: this.taskForm.get('importance')?.value,
+        dueDate: this.taskForm.get('date')?.value, 
       };
-
+      
       this.taskService.createTask(taskData).subscribe({
         next: () => {
-          this.submitting = false;
-          this.successMessage = '¡Tarea creada con éxito!';
-          
-          // Reset form after success
-          setTimeout(() => {
-            this.taskForm.reset({
-              environment: Environment.PERSONAL,
-              importance: 5,
-              priority: 5,
-              dueDate: new Date().toISOString().split('T')[0]
-            });
-            this.successMessage = '';
-          }, 2000);
+          this.router.navigate(['/tasks']);
         },
         error: (error) => {
-          this.submitting = false;
-          console.error('Error creating task:', error);
-          // Handle error
+          console.error('Error creating task', error);
         }
       });
     } else {

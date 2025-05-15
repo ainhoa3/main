@@ -13,4 +13,5 @@ export interface CredencialesUserDTO {
 
 export interface AuthResponse {
   token: string;
+  tokenExpiration: string;
 }
