@@ -35,6 +35,7 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
           <div class="task-content">
             <div class="task-title" [ngClass]="{'completed-title': task.done}">{{ task.title }}</div>
             <div class="task-environment">{{ getEnvironmentString(task.environment) }}</div>
+            <p class="task-description">{{ task.description }}</p>
           </div>
         </div>
       </div>

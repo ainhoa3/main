@@ -59,6 +59,7 @@ export interface TaskUpdatingDTO {
 export interface TaskPreview {
   id: number;
   title: string;
+  description: string;
   environment: Environment;
   importance: number; // 1-5 star rating
   done: boolean;

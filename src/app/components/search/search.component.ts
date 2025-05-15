@@ -1,9 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TaskService } from '../../services/task.service';
 import { HabitService } from '../../services/habit.service';
-import { TaskPreview } from '../../models/task.model';
+import { TaskPreview, Environment } from '../../models/task.model';
 import { HabitPreview } from '../../models/habit.model';
 import { TaskDetailComponent } from '../tasks/task-detail/task-detail.component';
 
@@ -39,7 +39,8 @@ import { TaskDetailComponent } from '../tasks/task-detail/task-detail.component'
               [ngClass]="getPriorityClass(task.priority)"
               (click)="openTaskDetail(task.id)">
               <h3 [ngClass]="{'completed-title': task.done}">{{ task.title }}</h3>
-              <div class="task-environment">{{ task.environment }}</div>
+              <div class="task-environment">{{ getEnvironmentString(task.environment) }}</div>
+              <p class="task-description">{{ task.description }}</p>
             </div>
           </div>
         </div>
@@ -185,10 +186,14 @@ export class SearchComponent {
   hasSearched: boolean = false;
   showTaskDetail: boolean = false;
   selectedTaskId: number = 0;
+  
+  getEnvironmentString(environment: Environment): string {
+    return environment === Environment.WORK ? 'Trabajo' : 'Personal';
+  }
 
   constructor(
-    private taskService: TaskService, 
-    private habitService: HabitService
+    @Inject(TaskService) private taskService: TaskService, 
+    @Inject(HabitService) private habitService: HabitService
   ) {}
 
   search(): void {
