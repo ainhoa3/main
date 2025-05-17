@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { TaskService } from '../../../services/task.service';
 import { TaskPreview, Task, Environment, numberToEnvironment, environmentToNumber, getEnvironmentString } from '../../../models/task.model';
 import { TaskDetailComponent } from '../task-detail/task-detail.component';
+import { SpinnerComponent } from '../../shared/spinner/spinner.component';
 
 @Component({
   selector: 'app-extra-tasks',
   standalone: true,
-  imports: [CommonModule, TaskDetailComponent],
+  imports: [CommonModule, TaskDetailComponent, SpinnerComponent],
   template: `
     <div class="extra-tasks-container">
       <h2 class="section-title">Tareas Extra</h2>
@@ -16,7 +17,8 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
         <button class="btn btn-filter" (click)="filterEnvironment(Environment.PERSONAL)" [ngClass]="{'selected': currentFilter === Environment.PERSONAL}">Personal</button>
         <button class="btn btn-filter" (click)="clearFilter()" [ngClass]="{'selected': currentFilter === null}">Todos</button>
       </div>
-      <div class="tasks-list" *ngIf="filteredTasks.length > 0">
+      <div class="tasks-container">
+        <div class="tasks-list" *ngIf="filteredTasks.length > 0">
         <div *ngFor="let task of filteredTasks" 
           class="task-item" 
           [ngClass]="{'completed': task.done}"
@@ -36,7 +38,10 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
           </div>
         </div>
       </div>
-      <div class="no-tasks" *ngIf="filteredTasks.length === 0">
+      <div class="loading-container" *ngIf="loading">
+        <app-spinner></app-spinner>
+      </div>
+      <div class="no-tasks" *ngIf="!loading && filteredTasks.length === 0">
         <p>No hay tareas extra</p>
       </div>
     </div>
@@ -134,6 +139,27 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
       gap: 0.5rem;
     }
 
+    .tasks-container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .loading-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+    }
+
+    .tasks-list {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
     .task-item {
       display: flex;
       align-items: center;
@@ -184,26 +210,44 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
 export class ExtraTasksComponent implements OnInit {
   Environment = Environment;
   tasks: TaskPreview[] = [];
-  allTasks: TaskPreview[] = [];
   filteredTasks: TaskPreview[] = [];
   currentFilter: Environment | null = null;
+  selectedTask: Task | null = null;
+  loading = false;
   showTaskDetail: boolean = false;
   selectedTaskId: number = 0;
+  allTasks: TaskPreview[] = []; // Added missing property
 
-  constructor(private taskService: TaskService) {}
+  constructor(private taskService: TaskService) {
+    // Initialize allTasks with tasks
+    this.allTasks = [...this.tasks];
+  }
 
   ngOnInit(): void {
     this.loadExtraTasks();
   }
 
+  applyFilter(): void {
+    if (this.currentFilter === null) {
+      this.filteredTasks = this.allTasks;
+    } else {
+      this.filteredTasks = this.allTasks.filter((task: TaskPreview) => 
+        environmentToNumber(task.environment) === environmentToNumber(this.currentFilter!)
+      );
+    }
+  }
+
   loadExtraTasks(): void {
+    this.loading = true;
     this.taskService.getExtraTasks().subscribe({
       next: (tasks) => {
-        this.allTasks = tasks;
-        this.filteredTasks = tasks;
+        this.tasks = tasks;
+        this.applyFilter();
+        this.loading = false;
       },
       error: (error) => {
         console.error('Error loading extra tasks:', error);
+        this.loading = false;
       }
     });
   }
@@ -211,6 +255,7 @@ export class ExtraTasksComponent implements OnInit {
   markAsDone(id: number): void {
     // Only mark as done if it's not already done
     if (!this.filteredTasks.find(task => task.id === id)?.done) {
+      this.loading = true;
       this.taskService.markTaskAsDone(id).subscribe({
         next: () => {
           // Update the task locally to prevent flickering
@@ -221,13 +266,11 @@ export class ExtraTasksComponent implements OnInit {
               done: true
             };
           }
-          // Add a small delay before refreshing to ensure local state update is completed
-          setTimeout(() => {
-            this.loadExtraTasks(); // Refresh the list
-          }, 100);
+          this.loadExtraTasks(); // Refresh the list
         },
         error: (error) => {
           console.error('Error marking task as done:', error);
+          this.loading = false;
         }
       });
     }

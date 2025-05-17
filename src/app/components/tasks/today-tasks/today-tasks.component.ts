@@ -4,11 +4,12 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TaskService } from '../../../services/task.service';
 import { TaskPreview, Environment, numberToEnvironment, environmentToNumber, getEnvironmentString } from '../../../models/task.model';
 import { TaskDetailComponent } from '../task-detail/task-detail.component';
+import { SpinnerComponent } from '../../shared/spinner/spinner.component';
 
 @Component({
   selector: 'app-today-tasks',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, TaskDetailComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, TaskDetailComponent, SpinnerComponent],
   template: `
     <div class="today-tasks-container">
       <h2 class="section-title">Tareas de Hoy</h2>
@@ -17,29 +18,34 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
         <button class="btn btn-filter" (click)="filterEnvironment(Environment.PERSONAL)" [ngClass]="{'selected': currentFilter === Environment.PERSONAL}">Personal</button>
         <button class="btn btn-filter" (click)="clearFilter()" [ngClass]="{'selected': currentFilter === null}">Todos</button>
       </div>
-      <div class="tasks-list" *ngIf="tasks.length > 0">
-        <div *ngFor="let task of filteredTasks" 
-          class="task-item" 
-          [class.completed]="task.done" 
-          [class.selected]="selectedTaskId === task.id"
-          [ngClass]="getPriorityClass(task.priority)"
-          (click)="openTaskDetail(task.id)">
-          <div class="task-checkbox">
-            <input 
-              type="checkbox" 
-              [checked]="task.done" 
-              (click)="$event.stopPropagation()"
-              (change)="markAsDone(task.id)"
-            >
-          </div>
-          <div class="task-content">
-            <div class="task-title" [ngClass]="{'completed-title': task.done}">{{ task.title }}</div>
-            <div class="task-environment-tag">{{ getEnvironmentString(task.environment) }}</div>
-            <div class="task-description">{{ task.description }}</div>
+      <div class="tasks-container">
+        <div class="tasks-list" *ngIf="filteredTasks.length > 0">
+          <div *ngFor="let task of filteredTasks" 
+            class="task-item" 
+            [class.completed]="task.done" 
+            [class.selected]="selectedTaskId === task.id"
+            [ngClass]="getPriorityClass(task.priority)"
+            (click)="openTaskDetail(task.id)">
+            <div class="task-checkbox">
+              <input 
+                type="checkbox" 
+                [checked]="task.done" 
+                (click)="$event.stopPropagation()"
+                (change)="markAsDone(task.id)"
+              >
+            </div>
+            <div class="task-content">
+              <div class="task-title" [ngClass]="{'completed-title': task.done}">{{ task.title }}</div>
+              <div class="task-environment-tag">{{ getEnvironmentString(task.environment) }}</div>
+              <div class="task-description">{{ task.description }}</div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="no-tasks" *ngIf="filteredTasks.length === 0 && tasks.length > 0">
+      <div class="loading-container" *ngIf="loading">
+        <app-spinner></app-spinner>
+      </div>
+      <div class="no-tasks" *ngIf="!loading && filteredTasks.length === 0 && tasks.length > 0">
         <p>No hay tareas en este filtro</p>
       </div>
       <div class="no-tasks" *ngIf="tasks.length === 0">
@@ -218,6 +224,27 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
       gap: 0.5rem;
     }
 
+    .tasks-container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .loading-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+    }
+
+    .tasks-list {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
     .task-item {
       display: flex;
       align-items: center;
@@ -372,6 +399,7 @@ export class TodayTasksComponent implements OnInit {
   tasks: TaskPreview[] = [];
   showTaskDetail: boolean = false;
   selectedTaskId: number | null = null;
+  loading = false;
 
   constructor(private taskService: TaskService) {}
 
@@ -380,14 +408,17 @@ export class TodayTasksComponent implements OnInit {
   }
 
   loadTasks(): void {
+    this.loading = true;
     this.taskService.getTasksOfTheDayPreview().subscribe({
       next: (tasks: TaskPreview[]) => {
         this.allTasks = tasks;
         this.filteredTasks = tasks;
         this.tasks = tasks;
+        this.loading = false;
       },
       error: (error: Error) => {
         console.error('Error loading tasks:', error);
+        this.loading = false;
       }
     });
   }
@@ -395,6 +426,7 @@ export class TodayTasksComponent implements OnInit {
   markAsDone(id: number): void {
     // Only mark as done if it's not already done
     if (!this.filteredTasks.find(task => task.id === id)?.done) {
+      this.loading = true;
       this.taskService.markTaskAsDone(id).subscribe({
         next: () => {
           // Update the task locally to prevent flickering
@@ -412,6 +444,7 @@ export class TodayTasksComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error marking task as done:', error);
+          this.loading = false;
         }
       });
     }

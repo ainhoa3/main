@@ -4,11 +4,12 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { TaskService } from '../../../services/task.service';
 import { Environment, TaskCreatingDTO } from '../../../models/task.model';
 import { Router } from '@angular/router';
+import { SpinnerComponent } from '../../shared/spinner/spinner.component';
 
 @Component({
   selector: 'app-create-task',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, SpinnerComponent],
   template: `
     <div class="create-task-container">
       <h1>Crear Nueva Tarea</h1>
@@ -76,9 +77,8 @@ import { Router } from '@angular/router';
         </div>
       </form>
 
-      <div *ngIf="submitting" class="loading-indicator">
-        <div class="spinner"></div>
-        <p>Guardando...</p>
+      <div *ngIf="submitting" class="loading-container">
+        <app-spinner></app-spinner>
       </div>
     </div>
   `,
@@ -128,20 +128,11 @@ import { Router } from '@angular/router';
       opacity: 0.65;
     }
     
-    .loading-indicator {
+    .loading-container {
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
-      margin-top: 20px;
-    }
-    
-    .spinner {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #3498db;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
+      height: 100%;
     }
     
     .error-message {
@@ -169,7 +160,7 @@ import { Router } from '@angular/router';
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
-      font-weight: 500;
+      font-weight: var(--font-weight-medium);
     }
 
     .global-error-message {
@@ -179,7 +170,7 @@ import { Router } from '@angular/router';
       background-color: rgba(255, 0, 0, 0.1);
       border-radius: var(--border-radius-sm);
       color: var(--error-color);
-      font-weight: 500;
+      font-weight: var(--font-weight-medium);
     }
 
     @media (max-width: 768px) {
