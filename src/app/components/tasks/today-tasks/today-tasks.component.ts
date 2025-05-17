@@ -34,8 +34,8 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
           </div>
           <div class="task-content">
             <div class="task-title" [ngClass]="{'completed-title': task.done}">{{ task.title }}</div>
-            <div class="task-environment">{{ getEnvironmentString(task.environment) }}</div>
-            <p class="task-description">{{ task.description }}</p>
+            <div class="task-environment-tag">{{ getEnvironmentString(task.environment) }}</div>
+            <div class="task-description">{{ task.description }}</div>
           </div>
         </div>
       </div>
@@ -55,6 +55,151 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
     ></app-task-detail>
   `,
   styles: [`
+    /* From Uiverse.io by 00Kubi */ 
+    .neon-checkbox {
+      --primary: #00ffaa;
+      --primary-dark: #00cc88;
+      --primary-light: #88ffdd;
+      --size: 30px;
+      position: relative;
+      width: var(--size);
+      height: var(--size);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .neon-checkbox input {
+      display: none;
+    }
+
+    .neon-checkbox__frame {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .neon-checkbox__box {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 4px;
+      border: 2px solid var(--primary-dark);
+      transition: all 0.4s ease;
+    }
+
+    .neon-checkbox__check-container {
+      position: absolute;
+      inset: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .neon-checkbox__check {
+      width: 80%;
+      height: 80%;
+      fill: none;
+      stroke: var(--primary);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 40;
+      stroke-dashoffset: 40;
+      transform-origin: center;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .neon-checkbox__glow {
+      position: absolute;
+      inset: -2px;
+      border-radius: 6px;
+      background: var(--primary);
+      opacity: 0;
+      filter: blur(8px);
+      transform: scale(1.2);
+      transition: all 0.4s ease;
+    }
+
+    .neon-checkbox__borders {
+      position: absolute;
+      inset: 0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .neon-checkbox__borders span {
+      position: absolute;
+      width: 40px;
+      height: 1px;
+      background: var(--primary);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .neon-checkbox__borders span:nth-child(1) {
+      top: 0;
+      left: -100%;
+      animation: borderFlow1 2s linear infinite;
+    }
+
+    .neon-checkbox__borders span:nth-child(2) {
+      top: -100%;
+      right: 0;
+      width: 1px;
+      height: 40px;
+      animation: borderFlow2 2s linear infinite;
+    }
+
+    .neon-checkbox__borders span:nth-child(3) {
+      bottom: 0;
+      right: -100%;
+      animation: borderFlow3 2s linear infinite;
+    }
+
+    .neon-checkbox__borders span:nth-child(4) {
+      bottom: -100%;
+      left: 0;
+      width: 1px;
+      height: 40px;
+      animation: borderFlow4 2s linear infinite;
+    }
+
+    .neon-checkbox__particles span {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 50%;
+      opacity: 0;
+      pointer-events: none;
+      top: 50%;
+      left: 50%;
+      box-shadow: 0 0 6px var(--primary);
+    }
+
+    .neon-checkbox__rings {
+      position: absolute;
+      inset: -20px;
+      pointer-events: none;
+    }
+
+    .neon-checkbox__rings .ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1px solid var(--primary);
+      opacity: 0;
+      transform: scale(0);
+    }
+
+    .neon-checkbox__sparks span {
+      position: absolute;
+      width: 20px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--primary), transparent);
+      opacity: 0;
+    }
+
     .today-tasks-container {
       padding: 1rem;
       height: 100%;
@@ -90,12 +235,28 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
 
     .task-checkbox {
       margin-right: 1rem;
+      display: flex;
+      align-items: center;
     }
 
     .task-checkbox input {
       width: 18px;
       height: 18px;
       cursor: pointer;
+      accent-color: var(--success-color);
+      border-radius: 4px;
+      border: 2px solid var(--border-color);
+      background-color: var(--background-color);
+      transition: all 0.2s ease;
+    }
+
+    .task-checkbox input:hover {
+      border-color: var(--success-color);
+    }
+
+    .task-checkbox input:checked {
+      background-color: var(--success-color);
+      border-color: var(--success-color);
     }
 
     .task-content {
@@ -112,10 +273,30 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
       color: var(--text-secondary);
     }
 
-    .task-environment {
+    .task-environment-tag {
+      font-size: 0.7rem;
+      color: white;
+      text-transform: capitalize;
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      display: inline-block;
+      margin-top: 0.25rem;
+    }
+
+    .task-environment-tag.work {
+      background-color: var(--primary-color);
+      border: 2px solid var(--primary-color);
+    }
+
+    .task-environment-tag.personal {
+      background-color: var(--secondary-color);
+      border: 2px solid var(--secondary-color);
+    }
+
+    .task-description {
       font-size: 0.8rem;
       color: var(--text-secondary);
-      text-transform: capitalize;
+      margin-top: 0.25rem;
     }
 
     .priority-high {
@@ -212,14 +393,28 @@ export class TodayTasksComponent implements OnInit {
   }
 
   markAsDone(id: number): void {
-    this.taskService.markTaskAsDone(id).subscribe({
-      next: () => {
-        this.loadTasks(); // Refresh the list
-      },
-      error: (error) => {
-        console.error('Error marking task as done:', error);
-      }
-    });
+    // Only mark as done if it's not already done
+    if (!this.filteredTasks.find(task => task.id === id)?.done) {
+      this.taskService.markTaskAsDone(id).subscribe({
+        next: () => {
+          // Update the task locally to prevent flickering
+          const taskIndex = this.filteredTasks.findIndex(task => task.id === id);
+          if (taskIndex !== -1) {
+            this.filteredTasks[taskIndex] = {
+              ...this.filteredTasks[taskIndex],
+              done: true
+            };
+          }
+          // Add a small delay before refreshing to ensure local state update is completed
+          setTimeout(() => {
+            this.loadTasks(); // Refresh the list
+          }, 100);
+        },
+        error: (error) => {
+          console.error('Error marking task as done:', error);
+        }
+      });
+    }
   }
 
   getPriorityClass(priority: number): string {

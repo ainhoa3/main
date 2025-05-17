@@ -19,12 +19,21 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
       <div class="tasks-list" *ngIf="filteredTasks.length > 0">
         <div *ngFor="let task of filteredTasks" 
           class="task-item" 
-          [class.completed]="task.done" 
-          [ngClass]="getPriorityClass(task.priority)"
+          [ngClass]="{'completed': task.done}"
           (click)="openTaskDetail(task.id)">
-          <div class="task-title" [ngClass]="{'completed-title': task.done}">{{ task.title }}</div>
-          <div class="task-environment">{{ getEnvironmentString(task.environment) }}</div>
-          <p class="task-description">{{ task.description }}</p>
+          <div class="task-checkbox">
+            <input 
+              type="checkbox" 
+              [checked]="task.done" 
+              (click)="$event.stopPropagation()"
+              (change)="markAsDone(task.id)"
+            >
+          </div>
+          <div class="task-content">
+            <div class="task-title" [ngClass]="{'completed-title': task.done}">{{ task.title }}</div>
+            <div class="task-environment-tag">{{ getEnvironmentString(task.environment) }}</div>
+            <div class="task-description-tag">{{ task.description }}</div>
+          </div>
         </div>
       </div>
       <div class="no-tasks" *ngIf="filteredTasks.length === 0">
@@ -40,6 +49,30 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
     ></app-task-detail>
   `,
   styles: [`
+    .task-checkbox {
+      margin-right: 1rem;
+    }
+
+    .task-checkbox input {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--success-color);
+      border-radius: 4px;
+      border: 2px solid var(--border-color);
+      background-color: var(--background-color);
+      transition: all 0.2s ease;
+    }
+
+    .task-checkbox input:hover {
+      border-color: var(--success-color);
+    }
+
+    .task-checkbox input:checked {
+      background-color: var(--success-color);
+      border-color: var(--success-color);
+    }
+
     .extra-tasks-container {
       padding: 1rem;
       height: 100%;
@@ -63,10 +96,30 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
       color: white;
     }
 
-    .task-environment {
+    .task-environment-tag {
+      font-size: 0.7rem;
+      color: white;
+      text-transform: capitalize;
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      display: inline-block;
+      margin-top: 0.25rem;
+    }
+
+    .task-environment-tag.work {
+      background-color: var(--primary-color);
+      border: 2px solid var(--primary-color);
+    }
+
+    .task-environment-tag.personal {
+      background-color: var(--secondary-color);
+      border: 2px solid var(--secondary-color);
+    }
+
+    .task-description {
       font-size: 0.8rem;
       color: var(--text-secondary);
-      text-transform: capitalize;
+      margin-top: 0.25rem;
     }
 
     .section-title {
@@ -82,6 +135,8 @@ import { TaskDetailComponent } from '../task-detail/task-detail.component';
     }
 
     .task-item {
+      display: flex;
+      align-items: center;
       background-color: white;
       padding: 0.75rem;
       border-radius: var(--border-radius-sm);
@@ -151,6 +206,31 @@ export class ExtraTasksComponent implements OnInit {
         console.error('Error loading extra tasks:', error);
       }
     });
+  }
+
+  markAsDone(id: number): void {
+    // Only mark as done if it's not already done
+    if (!this.filteredTasks.find(task => task.id === id)?.done) {
+      this.taskService.markTaskAsDone(id).subscribe({
+        next: () => {
+          // Update the task locally to prevent flickering
+          const taskIndex = this.filteredTasks.findIndex(task => task.id === id);
+          if (taskIndex !== -1) {
+            this.filteredTasks[taskIndex] = {
+              ...this.filteredTasks[taskIndex],
+              done: true
+            };
+          }
+          // Add a small delay before refreshing to ensure local state update is completed
+          setTimeout(() => {
+            this.loadExtraTasks(); // Refresh the list
+          }, 100);
+        },
+        error: (error) => {
+          console.error('Error marking task as done:', error);
+        }
+      });
+    }
   }
 
   filterEnvironment(environment: Environment): void {
