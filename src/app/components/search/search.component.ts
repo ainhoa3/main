@@ -6,11 +6,12 @@ import { HabitService } from '../../services/habit.service';
 import { TaskPreview, Environment } from '../../models/task.model';
 import { HabitPreview } from '../../models/habit.model';
 import { TaskDetailComponent } from '../tasks/task-detail/task-detail.component';
+import { SpinnerComponent } from '../shared/spinner/spinner.component';
 
 @Component({
   selector: 'app-search',
   standalone: true,
-  imports: [CommonModule, FormsModule, TaskDetailComponent],
+  imports: [CommonModule, FormsModule, TaskDetailComponent, SpinnerComponent],
   template: `
     <div class="search-page">
       <h1>Búsqueda</h1>
@@ -27,6 +28,9 @@ import { TaskDetailComponent } from '../tasks/task-detail/task-detail.component'
       </div>
 
       <div class="results-container">
+        <div class="loading-container" *ngIf="loading">
+          <app-spinner></app-spinner>
+        </div>
         <div class="tasks-section" *ngIf="hasSearched">
           <h2>Tareas</h2>
           <div *ngIf="tasks.length === 0" class="no-results">
@@ -73,6 +77,20 @@ import { TaskDetailComponent } from '../tasks/task-detail/task-detail.component'
     .search-page {
       padding: 2rem;
       min-height: calc(100vh - 70px);
+      position: relative;
+    }
+
+    .loading-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(255, 255, 255, 0.8);
+      z-index: 1000;
     }
 
     h1 {
@@ -186,6 +204,7 @@ export class SearchComponent {
   hasSearched: boolean = false;
   showTaskDetail: boolean = false;
   selectedTaskId: number = 0;
+  loading: boolean = false;
   
   getEnvironmentString(environment: Environment): string {
     return environment === Environment.WORK ? 'Trabajo' : 'Personal';
@@ -198,14 +217,18 @@ export class SearchComponent {
 
   search(): void {
     if (this.searchTerm.trim()) {
+      this.loading = true;
+      
       // Search tasks
       this.taskService.searchTasks(this.searchTerm).subscribe({
         next: (tasks) => {
           this.tasks = tasks;
           this.hasSearched = true;
+          this.loading = false;
         },
         error: (error) => {
           console.error('Error searching tasks:', error);
+          this.loading = false;
         }
       });
 
@@ -214,9 +237,11 @@ export class SearchComponent {
         next: (habits) => {
           this.habits = habits;
           this.hasSearched = true;
+          this.loading = false;
         },
         error: (error) => {
           console.error('Error searching habits:', error);
+          this.loading = false;
         }
       });
     }
