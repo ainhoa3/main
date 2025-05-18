@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TaskService } from '../../../services/task.service';
 import { TaskPreview, Environment, getEnvironmentString } from '../../../models/task.model';
-import { TaskDetailComponent } from '../task-detail/task-detail.component';
+import { TaskDetailComponent } from '../../tasks/task-detail/task-detail.component';
 import { SpinnerComponent } from '../../shared/spinner/spinner.component';
 
 @Component({
