@@ -33,7 +33,7 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
           </div>
           <div class="task-content">
             <div class="task-title" [ngClass]="{'completed-title': task.done}">{{ task.title }}</div>
-            <div class="task-environment-tag">{{ getEnvironmentString(task.environment) }}</div>
+            <div class="task-environment {{ getEnvironmentString(task.environment).toLowerCase() }}">{{ getEnvironmentString(task.environment) }}</div>
             <div class="task-description-tag">{{ task.description }}</div>
           </div>
         </div>
@@ -97,11 +97,11 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
     }
 
     .tasks-filters .btn-filter.selected {
-      background-color: #2ecc71;
+      background-color: var(--primary-color);
       color: white;
     }
 
-    .task-environment-tag {
+    .task-environment {
       font-size: 0.7rem;
       color: white;
       text-transform: capitalize;
@@ -109,19 +109,18 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
       border-radius: 12px;
       display: inline-block;
       margin-top: 0.25rem;
+      min-width: fit-content;
     }
 
-    .task-environment-tag.work {
+    .task-environment.work {
       background-color: var(--primary-color);
-      border: 2px solid var(--primary-color);
     }
 
-    .task-environment-tag.personal {
+    .task-environment.personal {
       background-color: var(--secondary-color);
-      border: 2px solid var(--secondary-color);
     }
 
-    .task-description {
+    .task-description-tag {
       font-size: 0.8rem;
       color: var(--text-secondary);
       margin-top: 0.25rem;

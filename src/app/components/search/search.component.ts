@@ -47,7 +47,7 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
               [ngClass]="getPriorityClass(task.priority)"
               (click)="openTaskDetail(task.id)">
               <h3 [ngClass]="{'completed-title': task.done}">{{ task.title }}</h3>
-              <div class="task-environment">{{ getEnvironmentString(task.environment) }}</div>
+              <div class="task-environment {{ getEnvironmentString(task.environment).toLowerCase() }}">{{ getEnvironmentString(task.environment) }}</div>
               <p class="task-description">{{ task.description }}</p>
             </div>
           </div>
@@ -159,10 +159,33 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
       color: var(--text-secondary);
     }
 
-    .task-environment, .habit-environment {
+    .task-environment {
+      font-size: 0.7rem;
+      color: white;
+      text-transform: capitalize;
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      display: inline-block;
+      margin-top: 0.25rem;
+      min-width: fit-content;
+    }
+
+    .task-environment.work {
+      background-color: var(--primary-color);
+    }
+
+    .task-environment.personal {
+      background-color: var(--secondary-color);
+    }
+
+    .task-description {
       font-size: 0.85rem;
       color: var(--text-secondary);
-      text-transform: capitalize;
+      margin-top: 0.5rem;
+    }
+
+    .task-description.completed {
+      color: var(--text-tertiary);
     }
 
     .no-results {

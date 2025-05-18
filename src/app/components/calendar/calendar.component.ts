@@ -67,7 +67,8 @@ import { SpinnerComponent } from '../../components/shared/spinner/spinner.compon
             (click)="openTaskDetail(task.id)"
           >
             <div class="task-title" [ngClass]="{'completed-title': task.done}">{{ task.title }}</div>
-            <div class="task-environment">{{ getEnvironmentString(task.environment) }}</div>
+            <div class="task-environment {{ getEnvironmentString(task.environment).toLowerCase() }}">{{ getEnvironmentString(task.environment) }}</div>
+            <div class="task-description" [ngClass]="{'completed-description': task.done}">{{ task.description }}</div>
           </div>
         </div>
       </div>
@@ -212,37 +213,41 @@ import { SpinnerComponent } from '../../components/shared/spinner/spinner.compon
     .no-tasks {
       padding: 2rem;
       text-align: center;
-      color: var(--text-secondary);
-    }
-
-    .task-item {
-      display: flex;
-      flex-direction: column;
-      padding: 0.75rem;
-      background-color: var(--background-color);
-      border-radius: var(--border-radius-sm);
-      cursor: pointer;
-      transition: background-color var(--transition-fast);
-    }
-
-    .task-item:hover {
-      background-color: rgba(46, 204, 113, 0.1);
-    }
-
-    .task-title {
-      font-weight: 500;
-      margin-bottom: 0.25rem;
-    }
-
-    .completed-title {
-      text-decoration: line-through;
-      color: var(--text-secondary);
     }
 
     .task-environment {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
+      font-size: 0.7rem;
+      color: white;
       text-transform: capitalize;
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      display: inline-block;
+      margin-top: 0.25rem;
+      margin-bottom: 0.5rem;
+      min-width: fit-content;
+      background-color: var(--primary-color);
+    }
+
+    .task-environment.work {
+      background-color: var(--primary-color);
+    }
+
+    .task-environment.personal {
+      background-color: var(--secondary-color);
+    }
+
+    .task-description {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0;
+    }
+
+    .task-description.completed-description {
+      color: var(--text-tertiary);
+    }
+
+    .task-environment.personal {
+      background-color: var(--secondary-color);
     }
 
     .priority-high {

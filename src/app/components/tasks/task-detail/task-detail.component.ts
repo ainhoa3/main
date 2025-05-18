@@ -34,8 +34,12 @@ import { Task, Environment, getEnvironmentString, TaskUpdatingDTO } from '../../
               </div>
               <div class="metric">
                 <span class="label">Estado:</span>
-                <span class="value status" [ngClass]="{'completed': task.done}">
-                  {{ task.done ? 'Completada' : 'Pendiente' }}
+                <span class="value status" [ngClass]="{ 
+                  'status-success': task.done,
+                  'status-error': !task.done && this.isTaskLate(task),
+                  'status-pending': !task.done && !this.isTaskLate(task)
+                }">
+                  {{ this.getTaskStatus(task) }}
                 </span>
               </div>
             </div>
@@ -159,11 +163,26 @@ import { Task, Environment, getEnvironmentString, TaskUpdatingDTO } from '../../
     }
 
     .status {
-      color: var(--warning-color);
+      font-weight: 500;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      display: inline-block;
+      min-width: fit-content;
     }
 
-    .status.completed {
+    .status-success {
       color: var(--success-color);
+      background-color: rgba(39, 174, 96, 0.1);
+    }
+
+    .status-error {
+      color: var(--error-color);
+      background-color: rgba(231, 76, 60, 0.1);
+    }
+
+    .status-pending {
+      color: var(--warning-color);
+      background-color: rgba(243, 156, 18, 0.1);
     }
 
     .edit-form {
@@ -246,8 +265,25 @@ export class TaskDetailComponent implements OnInit {
 
   getEnvironmentStringFromNumber(environment: number | Environment): string {
     const env = typeof environment === 'number' ? this.convertToEnvironment(environment) : environment;
-    return this.getEnvironmentString(env);
+    return getEnvironmentString(env);
   }
+
+  isTaskLate(task: Task): boolean {
+    const dueDate = new Date(task.dueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    dueDate.setHours(0, 0, 0, 0);
+    return dueDate < today;
+  }
+
+  getTaskStatus(task: Task): string {
+    if (task.done) {
+      return 'Terminada';
+    }
+    return this.isTaskLate(task) ? 'Atrasada' : 'Pendiente';
+  }
+
+
 
   initForm(): void {
     if (this.task) {
