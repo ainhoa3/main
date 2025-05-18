@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TaskService } from '../../../services/task.service';
-import { TaskPreview, Environment, numberToEnvironment, environmentToNumber, getEnvironmentString } from '../../../models/task.model';
+import { TaskPreview, Environment, getEnvironmentString } from '../../../models/task.model';
 import { TaskDetailComponent } from '../task-detail/task-detail.component';
 import { SpinnerComponent } from '../../shared/spinner/spinner.component';
 
@@ -376,8 +376,8 @@ export class TodayTasksComponent implements OnInit {
 
   filterEnvironment(environment: Environment): void {
     this.currentFilter = environment;
-    const environmentNumber = environmentToNumber(environment);
-    this.filteredTasks = this.allTasks.filter(task => environmentToNumber(task.environment) === environmentNumber);
+    const environmentNumber = this.convertToEnvironment(0); // Convertir WORK a número
+    this.filteredTasks = this.allTasks.filter(task => this.convertToEnvironment(0) === task.environment);
     // Always keep tasks list populated to prevent hiding buttons
     this.tasks = this.filteredTasks;
     console.log('Filtering tasks:', { environment, filteredTasksCount: this.filteredTasks.length });
@@ -402,6 +402,11 @@ export class TodayTasksComponent implements OnInit {
   loading = false;
 
   constructor(private taskService: TaskService) {}
+
+  // Convert number from API to Environment enum
+  convertToEnvironment(num: number): Environment {
+    return num === 0 ? Environment.WORK : Environment.PERSONAL;
+  }
 
   ngOnInit(): void {
     this.loadTasks();

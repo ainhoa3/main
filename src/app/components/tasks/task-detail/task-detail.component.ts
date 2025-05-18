@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output, Inject } from '@angular
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TaskService } from '../../../services/task.service';
-import { Task, Environment, TaskUpdatingDTO } from '../../../models/task.model';
+import { Task, Environment, getEnvironmentString, TaskUpdatingDTO } from '../../../models/task.model';
 
 @Component({
   selector: 'app-task-detail',
@@ -19,7 +19,7 @@ import { Task, Environment, TaskUpdatingDTO } from '../../../models/task.model';
           <div *ngIf="!isEditing && task" class="task-view">
             <h3 class="task-title">{{ task.title }}</h3>
             <div class="task-meta">
-              <span class="task-environment">{{ getEnvironmentString(task.environment) }}</span>
+              <span class="task-environment">{{ getEnvironmentStringFromNumber(task.environment) }}</span>
               <span class="task-date">Fecha: {{ task.dueDate | date:'dd/MM/yyyy' }}</span>
             </div> 
             <p class="task-description">{{ task.description }}</p>
@@ -238,6 +238,15 @@ export class TaskDetailComponent implements OnInit {
 
   getEnvironmentString(environment: Environment): string {
     return environment === Environment.WORK ? 'Trabajo' : 'Personal';
+  }
+
+  convertToEnvironment(num: number): Environment {
+    return num === 0 ? Environment.WORK : Environment.PERSONAL;
+  }
+
+  getEnvironmentStringFromNumber(environment: number | Environment): string {
+    const env = typeof environment === 'number' ? this.convertToEnvironment(environment) : environment;
+    return this.getEnvironmentString(env);
   }
 
   initForm(): void {

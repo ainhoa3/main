@@ -1,13 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TaskService } from '../../services/task.service';
-import { TaskPreview, getEnvironmentString } from '../../models/task.model';
+import { TaskPreview, getEnvironmentString, Environment } from '../../models/task.model';
 import { TaskDetailComponent } from '../tasks/task-detail/task-detail.component';
+import { SpinnerComponent } from '../../components/shared/spinner/spinner.component';
 
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, TaskDetailComponent],
+  imports: [CommonModule, TaskDetailComponent, SpinnerComponent],
   template: `
     <div class="calendar-page">
       <h1>Calendario de Tareas</h1>
@@ -19,11 +20,8 @@ import { TaskDetailComponent } from '../tasks/task-detail/task-detail.component'
       </div>
       
       <div class="calendar">
-        <div class="weekdays">
-          <div class="weekday">Dom</div>
-          <div class="weekday">Lun</div>
-          <div class="weekday">Mar</div>
-          <div class="weekday">Mié</div>
+        <div class="loading-container" *ngIf="loading">
+          <app-spinner></app-spinner>
           <div class="weekday">Jue</div>
           <div class="weekday">Vie</div>
           <div class="weekday">Sáb</div>
@@ -85,6 +83,8 @@ import { TaskDetailComponent } from '../tasks/task-detail/task-detail.component'
   styles: [`
     .calendar-page {
       padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
     }
 
     h1 {
@@ -302,9 +302,21 @@ export class CalendarComponent implements OnInit {
   showTaskDetail = false;
   selectedTaskId = 0;
 
-  constructor(private taskService: TaskService) {
+  loading = false;
+
+  constructor(@Inject(TaskService) private taskService: TaskService) {
     this.currentMonth = this.currentDate.getMonth();
     this.currentYear = this.currentDate.getFullYear();
+  }
+
+  // Convert number from API to Environment enum
+  convertToEnvironment(num: number): Environment {
+    return num === 0 ? Environment.WORK : Environment.PERSONAL;
+  }
+
+  getEnvironmentString(environment: number | Environment): string {
+    const env = typeof environment === 'number' ? this.convertToEnvironment(environment) : environment;
+    return getEnvironmentString(env);
   }
 
   ngOnInit(): void {
@@ -380,8 +392,34 @@ export class CalendarComponent implements OnInit {
   }
 
   loadTasksForCalendar(): void {
+    this.loading = true;
     const startDate = this.calendarDays[0].date;
     const endDate = this.calendarDays[this.calendarDays.length - 1].date;
+
+    // For each day, fetch tasks
+    this.calendarDays.forEach((day, index) => {
+      this.taskService.getTasksByDate(day.date).subscribe({
+        next: (tasks) => {
+          // Update the tasks for this day
+          this.calendarDays[index].tasks = tasks;
+          
+          // If this is the selected day, update the selected day's tasks
+          if (this.selectedDay && this.isSameDay(this.selectedDay.date, day.date)) {
+            this.selectedDay.tasks = tasks;
+          }
+          
+          // Check if all tasks have been loaded
+          const allTasksLoaded = this.calendarDays.every(day => day.tasks.length >= 0);
+          if (allTasksLoaded) {
+            this.loading = false;
+          }
+        },
+        error: (error) => {
+          console.error('Error loading tasks:', error);
+          this.loading = false;
+        }
+      });
+    });
 
     // For each day, fetch tasks
     this.calendarDays.forEach((day, index) => {
@@ -457,6 +495,7 @@ export class CalendarComponent implements OnInit {
   }
 
   refreshCalendar(): void {
-    this.loadTasksForCalendar();
+    this.loading = true;
+    this.generateCalendar();
   }
 }
