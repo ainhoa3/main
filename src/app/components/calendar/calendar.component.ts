@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TaskService } from '../../services/task.service';
-import { TaskPreview } from '../../models/task.model';
+import { TaskPreview, getEnvironmentString } from '../../models/task.model';
 import { TaskDetailComponent } from '../tasks/task-detail/task-detail.component';
 
 @Component({
@@ -69,7 +69,7 @@ import { TaskDetailComponent } from '../tasks/task-detail/task-detail.component'
             (click)="openTaskDetail(task.id)"
           >
             <div class="task-title" [ngClass]="{'completed-title': task.done}">{{ task.title }}</div>
-            <div class="task-environment">{{ task.environment }}</div>
+            <div class="task-environment">{{ getEnvironmentString(task.environment) }}</div>
           </div>
         </div>
       </div>

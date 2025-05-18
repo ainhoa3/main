@@ -7,11 +7,15 @@ import { TaskPreview, Environment } from '../../models/task.model';
 import { HabitPreview } from '../../models/habit.model';
 import { TaskDetailComponent } from '../tasks/task-detail/task-detail.component';
 import { SpinnerComponent } from '../shared/spinner/spinner.component';
-
 @Component({
   selector: 'app-search',
   standalone: true,
-  imports: [CommonModule, FormsModule, TaskDetailComponent, SpinnerComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TaskDetailComponent,
+    SpinnerComponent
+  ],
   template: `
     <div class="search-page">
       <h1>Búsqueda</h1>
