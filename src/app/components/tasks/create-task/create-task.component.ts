@@ -160,7 +160,6 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
-      font-weight: var(--font-weight-medium);
     }
 
     .global-error-message {

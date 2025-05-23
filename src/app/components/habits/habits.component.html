@@ -2,6 +2,88 @@
   <app-header [pageName]="'Hábitos'"></app-header>
   
   <div class="habits-content">
+    <ng-template #modalContent>
+      <div class="modal-backdrop" (click)="onBackdropClick($event)">
+        <div class="modal-content habit-detail">
+          <div class="modal-header">
+            <h2>{{ isEditing ? 'Editar Hábito' : 'Detalle de Hábito' }}</h2>
+            <button class="close-btn" (click)="modalRef.close()">✕</button>
+          </div>
+          <div class="modal-body">
+            <div *ngIf="!isEditing && habitDetail" class="habit-view">
+              <h3 class="habit-title">{{ habitDetail.title }}</h3>
+              <div class="habit-meta">
+                <span class="habit-environment">{{ getEnvironmentString(habitDetail.environment) }}</span>
+                <span class="habit-date">Último día: {{ habitDetail.lastDay | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <p class="habit-description">{{ habitDetail.description }}</p>
+              <div class="habit-metrics">
+                <div class="metric">
+                  <span class="label">Estado:</span>
+                  <span class="value status" [ngClass]="{ 
+                    'status-success': habitDetail.done,
+                    'status-pending': !habitDetail.done
+                  }">
+                    {{ habitDetail.done ? 'Completado' : 'Pendiente' }}
+                  </span>
+                </div>
+                <div class="metric">
+                  <span class="label">Frecuencia:</span>
+                  <span class="value">{{ habitDetail.programmDays }} días</span>
+                </div>
+              </div>
+            </div>
+
+            <form *ngIf="isEditing && habitForm" [formGroup]="habitForm" class="edit-form">
+              <div class="form-group">
+                <label for="title">Título</label>
+                <input type="text" id="title" formControlName="title" class="form-control">
+                <div *ngIf="habitForm && habitForm.get('title')?.invalid && habitForm.get('title')?.touched" class="error-message">
+                  El título es requerido
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="description">Descripción</label>
+                <textarea id="description" formControlName="description" class="form-control" rows="3"></textarea>
+              </div>
+              
+              <div class="form-group">
+                <label for="environment">Entorno</label>
+                <select id="environment" formControlName="environment" class="form-control">
+                  <option [value]="Environment.WORK">Trabajo</option>
+                  <option [value]="Environment.PERSONAL">Personal</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="programmDays">Frecuencia (días)</label>
+                <input type="number" id="programmDays" formControlName="programmDays" class="form-control" min="1">
+              </div>
+              
+              <div class="form-group">
+                <label for="lastDay">Último día</label>
+                <input type="date" id="lastDay" formControlName="lastDay" class="form-control">
+              </div>
+              
+              <div class="form-group checkbox-group">
+                <label class="checkbox">
+                  <input type="checkbox" formControlName="done">
+                  <span>Marcar como completado</span>
+                </label>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button *ngIf="!isEditing" class="btn btn-outline" (click)="startEditing()">Editar</button>
+            <button *ngIf="isEditing" class="btn btn-outline" (click)="cancelEdit()">Cancelar</button>
+            <button *ngIf="isEditing" class="btn btn-primary" (click)="saveHabit()" [disabled]="habitForm.invalid">Guardar</button>
+            <button *ngIf="!isEditing" class="btn btn-primary" (click)="modalRef.close()">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+
     <div class="habits-header">
       <h1>Mis Hábitos</h1>
       <button class="btn btn-primary" routerLink="/create-habit">Nuevo Hábito</button>
@@ -15,15 +97,16 @@
     <div class="habits-list" *ngIf="filteredHabits.length > 0">
       <div *ngFor="let habit of filteredHabits" 
         class="habit-item"
-        [ngClass]="getPriorityClass(habit.priority)">
+        [ngClass]="getEnvironmentClass(habit.environment)"
+        (click)="openHabitDetail(habit.id)">
         <h3>{{ habit.title }}</h3>
         <div class="habit-environment">{{ getEnvironmentString(habit.environment) }}</div>
       </div>
     </div>
     
-    <div class="no-habits" *ngIf="habits.length === 0">
-      <p>No tienes hábitos configurados</p>
-      <button class="btn btn-primary" routerLink="/create-habit">Crear mi primer hábito</button>
+    <div class="no-habits" *ngIf="filteredHabits.length === 0">
+      <p>No hay hábitos para hoy</p>
+      <button class="btn btn-primary" routerLink="/create-habit">Crear nuevo hábito</button>
     </div>
   </div>
 </div>

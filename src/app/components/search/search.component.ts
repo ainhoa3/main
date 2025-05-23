@@ -1,12 +1,15 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { TaskService } from '../../services/task.service';
 import { HabitService } from '../../services/habit.service';
 import { TaskPreview, Environment } from '../../models/task.model';
-import { HabitPreview } from '../../models/habit.model';
+import { HabitPreview, Habit } from '../../models/habit.model';
 import { TaskDetailComponent } from '../tasks/task-detail/task-detail.component';
+import { HabitDetailComponent } from '../habits/habit-detail/habit-detail.component';
 import { SpinnerComponent } from '../shared/spinner/spinner.component';
+
 @Component({
   selector: 'app-search',
   standalone: true,
@@ -14,6 +17,7 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
     CommonModule,
     FormsModule,
     TaskDetailComponent,
+    HabitDetailComponent,
     SpinnerComponent
   ],
   template: `
@@ -61,7 +65,7 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
           <div class="results-list" *ngIf="habits.length > 0">
             <div *ngFor="let habit of habits" 
               class="result-item habit-result"
-              [ngClass]="getPriorityClass(habit.priority)">
+              (click)="openHabitDetail(habit.id)">
               <h3>{{ habit.title }}</h3>
               <div class="habit-environment">{{ habit.environment }}</div>
             </div>
@@ -75,6 +79,21 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
         (close)="closeTaskDetail()"
         (taskUpdated)="search()"
       ></app-task-detail>
+
+      <ng-template #habitModal let-modal>
+        <div class="modal-header">
+          <h4 class="modal-title">Detalles del Hábito</h4>
+          <button type="button" class="btn-close" (click)="closeHabitModal()" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <app-habit-detail 
+            *ngIf="selectedHabitId" 
+            [habitId]="selectedHabitId"
+            (habitUpdated)="onHabitUpdated()"
+            (habitDeleted)="onHabitDeleted()">
+          </app-habit-detail>
+        </div>
+      </ng-template>
     </div>
   `,
   styles: [`
@@ -217,6 +236,23 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
       font-size: 1.3rem;
     }
 
+    .modal-header {
+      border-bottom: 1px solid #dee2e6;
+      padding: 1rem;
+    }
+    
+    .modal-title {
+      margin: 0;
+    }
+    
+    .modal-body {
+      padding: 1rem;
+    }
+    
+    .btn-close {
+      margin: -0.5rem -0.5rem -0.5rem auto;
+    }
+
     @media (min-width: 768px) {
       .results-container {
         grid-template-columns: 1fr 1fr;
@@ -225,13 +261,17 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
   `]
 })
 export class SearchComponent {
+  @ViewChild('habitModal') habitModalTemplate!: TemplateRef<any>;
+  
   searchTerm: string = '';
   tasks: TaskPreview[] = [];
   habits: HabitPreview[] = [];
   hasSearched: boolean = false;
   showTaskDetail: boolean = false;
   selectedTaskId: number = 0;
+  selectedHabitId: number | null = null;
   loading: boolean = false;
+  private habitModalRef: NgbModalRef | null = null;
   
   getEnvironmentString(environment: Environment): string {
     return environment === Environment.WORK ? 'Trabajo' : 'Personal';
@@ -239,7 +279,8 @@ export class SearchComponent {
 
   constructor(
     @Inject(TaskService) private taskService: TaskService, 
-    @Inject(HabitService) private habitService: HabitService
+    @Inject(HabitService) private habitService: HabitService,
+    private modalService: NgbModal
   ) {}
 
   search(): void {
@@ -291,5 +332,30 @@ export class SearchComponent {
 
   closeTaskDetail(): void {
     this.showTaskDetail = false;
+  }
+
+  openHabitDetail(habitId: number): void {
+    this.selectedHabitId = habitId;
+    this.habitModalRef = this.modalService.open(this.habitModalTemplate, { size: 'lg' });
+  }
+
+  closeHabitModal(): void {
+    if (this.habitModalRef) {
+      this.habitModalRef.close();
+      this.habitModalRef = null;
+      this.selectedHabitId = null;
+    }
+  }
+
+  onHabitUpdated(): void {
+    // Refresh the habits list when a habit is updated
+    this.search();
+    this.closeHabitModal();
+  }
+
+  onHabitDeleted(): void {
+    // Refresh the habits list when a habit is deleted
+    this.search();
+    this.closeHabitModal();
   }
 }

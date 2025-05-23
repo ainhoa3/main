@@ -46,23 +46,21 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
         
         <div class="form-row">
           <div class="form-group">
-            <label>Importancia</label>
-            <div class="star-rating">
-              <span *ngFor="let star of [1, 2, 3, 4, 5]" 
-                    (click)="setImportance(star)" 
-                    class="star">
-                {{ star <= habitForm.get('importance')?.value ? '★' : '☆' }}
-              </span>
+            <label for="done">Hecho</label>
+            <input type="checkbox" id="done" formControlName="done" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="programmDays">Días de Programación</label>
+            <input type="number" id="programmDays" formControlName="programmDays" class="form-control" min="1">
+            <div *ngIf="habitForm.get('programmDays')?.invalid && (habitForm.get('programmDays')?.dirty || habitForm.get('programmDays')?.touched)" class="error-message">
+              Debe ser un número mayor a 0
             </div>
           </div>
-          <div *ngIf="habitForm.get('importance')?.invalid && (habitForm.get('importance')?.dirty || habitForm.get('importance')?.touched)" class="error-message">
-            Selecciona un valor entre 1 y 10
-          </div>
-          <div class="form-group half">
-            <label for="priority">Prioridad (1-10)</label>
-            <input type="number" id="priority" formControlName="priority" min="1" max="10" class="form-control">
-            <div *ngIf="habitForm.get('priority')?.invalid && (habitForm.get('priority')?.dirty || habitForm.get('priority')?.touched)" class="error-message">
-              Selecciona un valor entre 1 y 10
+          <div class="form-group">
+            <label for="startingDay">Día de Inicio</label>
+            <input type="date" id="startingDay" formControlName="startingDay" class="form-control">
+            <div *ngIf="habitForm.get('startingDay')?.invalid && (habitForm.get('startingDay')?.dirty || habitForm.get('startingDay')?.touched)" class="error-message">
+              Selecciona una fecha válida
             </div>
           </div>
         </div>
@@ -110,14 +108,8 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
       width: 100%;
     }
 
-    .half {
+    .form-group {
       flex: 1;
-    }
-
-    .star-rating .star {
-      cursor: pointer;
-      font-size: 24px;
-      color: #ffc107;
     }
 
     .form-actions {
@@ -168,8 +160,9 @@ export class CreateHabitComponent {
       title: ['', [Validators.required, Validators.minLength(3)]],
       description: ['', [Validators.required]],
       environment: [Environment.PERSONAL, [Validators.required]],
-      importance: [''],
-      priority: ['']
+      done: [false],
+      programmDays: ['', [Validators.required, Validators.min(1)]],
+      startingDay: ['', [Validators.required]]
     });
   }
 
@@ -187,9 +180,10 @@ export class CreateHabitComponent {
       const habitData: HabitCreatingDTO = {
         title: this.habitForm.value.title.trim(),
         description: this.habitForm.value.description.trim(),
-        environment: this.habitForm.value.environment,
-        importance: this.habitForm.value.importance,
-        priority: this.habitForm.value.priority
+        done: this.habitForm.value.done,
+        programmDays: this.habitForm.value.programmDays,
+        startingDay: this.habitForm.value.startingDay,
+        environment: this.habitForm.value.environment
       };
 
       this.habitService.createHabit(habitData).subscribe({
