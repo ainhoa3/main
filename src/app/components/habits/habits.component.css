@@ -5,15 +5,12 @@
   background-color: #f5f7fa;
 }
 
-
-
 .habits-container {
   padding: 1rem;
   max-width: 1200px;
   margin: 0 auto;
 }
-
-
+  
 /* Adjust for mobile */
 @media (max-width: 768px) {
   .habits-content {
@@ -37,27 +34,55 @@
   margin-bottom: 1rem;
 }
 
-.btn-filter {
+.habits-filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.filter-button {
   flex: 1;
-  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
   border: none;
-  border-radius: var(--border-radius-sm);
-  background-color: var(--success-color);
-  color: white;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  color: #6c757d;
   cursor: pointer;
-  transition: all var(--transition-fast);
-  border: 1px solid var(--success-color);
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
 }
 
-.btn-filter:hover {
-  background-color: var(--success-color-dark);
-  color: white;
+.filter-button:hover {
+  background-color: #e9ecef;
+  color: #495057;
 }
 
-.btn-filter.selected {
-  background-color: var(--success-color-dark);
+.filter-button.active {
+  background-color: #007bff;
   color: white;
-  border-color: var(--success-color-dark);
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.filter-icon {
+  font-size: 1.1rem;
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .habits-filters {
+    flex-direction: column;
+  }
+  
+  .filter-button {
+    width: 100%;
+  }
 }
 
 .habits-list {

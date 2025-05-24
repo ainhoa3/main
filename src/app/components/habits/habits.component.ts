@@ -109,7 +109,9 @@ export class HabitsComponent implements OnInit {
     if (environment === 'all') {
       this.filteredHabits = [...this.allHabits];
     } else {
-      this.filteredHabits = this.allHabits.filter(h => h._Environment === environment);
+      // Convert string to number (0 for personal, 1 for work)
+      const envNumber = environment === 'work' ? 1 : 0;
+      this.filteredHabits = this.allHabits.filter(h => Number(h._Environment) === envNumber);
     }
     this.currentFilter = environment;
   }

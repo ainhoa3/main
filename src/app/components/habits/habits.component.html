@@ -94,9 +94,18 @@
     
     <div class="habits-container">
       <div class="habits-filters">
-        <button class="btn btn-filter" (click)="filterEnvironment('work')" [ngClass]="{'selected': currentFilter === 'work'}">Trabajo</button>
-        <button class="btn btn-filter" (click)="filterEnvironment('personal')" [ngClass]="{'selected': currentFilter === 'personal'}">Personal</button>
-        <button class="btn btn-filter" (click)="clearFilter()" [ngClass]="{'selected': currentFilter === null}">Todos</button>
+        <button class="filter-button" (click)="filterEnvironment('work')" [ngClass]="{'active': currentFilter === 'work'}">
+          <span class="filter-icon">💼</span>
+          <span>Trabajo</span>
+        </button>
+        <button class="filter-button" (click)="filterEnvironment('personal')" [ngClass]="{'active': currentFilter === 'personal'}">
+          <span class="filter-icon">🏠</span>
+          <span>Personal</span>
+        </button>
+        <button class="filter-button" (click)="clearFilter()" [ngClass]="{'active': currentFilter === null}">
+          <span class="filter-icon">🔄</span>
+          <span>Todos</span>
+        </button>
       </div>
       <div class="habits-list" *ngIf="filteredHabits.length > 0">
         <div *ngFor="let habit of filteredHabits" 
