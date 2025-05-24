@@ -169,8 +169,8 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
         *ngIf="showTaskDetail" 
         [taskId]="selectedTaskId" 
         (close)="closeTaskDetail()"
-        (taskUpdated)="search()"
-      ></app-task-detail>
+        (taskUpdated)="search()">
+      </app-task-detail>
 
       <ng-template #habitModal let-modal>
         <div class="modal-header">
@@ -188,42 +188,264 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
       padding: 2rem;
       min-height: calc(100vh - 70px);
       position: relative;
+      background-color: #f8f9fa;
     }
 
-    .loading-container {
-      position: absolute;
+    /* Habit Detail Modal Styles */
+    .modal-backdrop {
+      position: fixed;
       top: 0;
       left: 0;
-      right: 0;
-      bottom: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 1);
       display: flex;
       justify-content: center;
       align-items: center;
-      background-color: rgba(255, 255, 255, 0.8);
-      z-index: 1000;
+      z-index: 1050;
     }
 
-    h1 {
+    .habit-detail {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      margin: 1rem;
+      width: 90%;
+    }
+
+    .modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #333;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #666;
+      padding: 0.5rem;
+    }
+
+    .close-btn:hover {
+      color: #333;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .modal-footer {
+      padding: 1.5rem;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+    }
+
+    .habit-view {
+      text-align: left;
+    }
+
+    .habit-title {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 1.5em;
+    }
+
+    .habit-meta {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 1rem;
+      color: #666;
+      font-size: 0.9em;
+    }
+
+    .habit-description {
+      margin-bottom: 20px;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    .habit-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .metric {
+      display: flex;
+      align-items: center;
+    }
+
+    .label {
+      color: #666;
+      margin-right: 10px;
+    }
+
+    .value {
+      font-weight: 500;
+    }
+
+    .status {
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .status-success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    /* Form Styles */
+    .edit-form .form-group {
       margin-bottom: 1.5rem;
-      font-size: 1.8rem;
+    }
+
+    .edit-form label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .edit-form .form-control {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #495057;
+      background-color: #fff;
+      background-clip: padding-box;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .edit-form .form-control:focus {
+      border-color: #80bdff;
+      outline: 0;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+    }
+
+    .checkbox {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .checkbox input[type="checkbox"] {
+      margin-right: 0.5rem;
+    }
+
+    .error-message {
+      color: #dc3545;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+
+    /* Button Styles */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      font-weight: 500;
+      line-height: 1.5;
+      text-align: center;
+      text-decoration: none;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      user-select: none;
+      border: 1px solid transparent;
+      border-radius: 0.25rem;
+      transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
+                  border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .btn-primary {
+      color: #fff;
+      background-color: #007bff;
+      border-color: #007bff;
+    }
+
+    .btn-primary:hover {
+      background-color: #27ae60;
+      border-color: #27ae60;
+    }
+
+    .btn-outline {
+      color: #6c757d;
+      background-color: transparent;
+      background-image: none;
+      border-color: #6c757d;
+    }
+
+    .btn-outline:hover {
+      color: #fff;
+      background-color: #6c757d;
+      border-color: #6c757d;
     }
 
     .search-container {
       display: flex;
-      margin-bottom: 2rem;
+      gap: 1rem;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem 0;
     }
 
     .search-input {
-      flex-grow: 1;
+      flex: 1;
       padding: 0.75rem 1rem;
-      border: 1px solid var(--border-color);
-      border-radius: var(--border-radius-sm);
       font-size: 1rem;
-      margin-right: 0.75rem;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+      transition: border-color 0.15s ease-in-out;
+    }
+
+    .btn-primary {
+      color: #fff;
+      background-color: #2ecc71;
+      border-color: #2ecc71;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.25rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: #27ae60;
+      border-color: #27ae60;
+      transform: translateY(-1px);
     }
 
     .search-input:focus {
-      border-color: var(--primary-color);
+      border-color: #2ecc71;
       box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
     }
 
@@ -231,6 +453,9 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
       display: grid;
       grid-template-columns: 1fr;
       gap: 2rem;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
     }
 
     .results-list {
@@ -444,6 +669,7 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
       min-height: calc(100% - 3.5rem);
       display: flex;
       align-items: center;
+      opacity: 1 !important;
     }
     
     .modal-content {
@@ -460,8 +686,7 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
     }
 
     .modal-backdrop {
-      opacity: 0.5 !important;
-    }
+      opacity: 1 !important;
       border: none;
       border-radius: 0.5rem;
       box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
