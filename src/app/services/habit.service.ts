@@ -46,6 +46,14 @@ export class HabitService {
     );
   }
 
+  // Mark a habit as done
+  markHabitAsDone(habitId: number): Observable<HabitPreview> {
+    const token = this.authService.getToken();
+    return this.http.put<HabitPreview>(`${this.apiUrl}/MarkHabitAsDone/${habitId}`, null, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+  }
+
   // Search habits by keyword
   searchHabits(search: string): Observable<HabitPreview[]> {
     const token = this.authService.getToken();

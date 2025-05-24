@@ -20,6 +20,10 @@ export class AuthService {
     this.initializeUser();
   }
 
+  getCurrentUser(): User | null {
+    return this.currentUserSubject.value;
+  }
+
   private initializeUser(): void {
     const token = this.getToken();
     if (token) {

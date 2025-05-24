@@ -5,29 +5,14 @@
   background-color: #f5f7fa;
 }
 
-.habits-content {
-  padding: 2rem;
-  margin-left: 250px;
-  padding-top: 5rem; /* Add padding to account for fixed header */
-  min-height: 100vh;
-  background-color: #f5f7fa;
+
+
+.habits-container {
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* Header styles */
-app-header {
-  position: fixed;
-  top: 0;
-  left: 250px;
-  right: 0;
-  z-index: 1000;
-  background-color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  padding: 1rem 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 70px;
-}
 
 /* Adjust for mobile */
 @media (max-width: 768px) {
@@ -36,11 +21,7 @@ app-header {
     padding: 1rem;
     padding-top: 5rem;
   }
-  
-  app-header {
-    left: 60px;
-    padding: 0.5rem 1rem;
-  }
+
 }
 
 .habits-header {

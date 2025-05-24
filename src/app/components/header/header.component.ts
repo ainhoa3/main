@@ -47,21 +47,26 @@ import { AuthService } from '../../services/auth.service';
       margin-right: 1.5rem;
       background-color: rgba(243, 156, 18, 0.1);
       padding: 0.35rem 0.75rem;
-      border-radius: var(--border-radius-sm);
+      border-radius: 4px;
+      min-width: 60px;
+      justify-content: center;
     }
 
     .streak-icon {
       margin-right: 0.3rem;
       font-size: 1.1rem;
+      color: var(--warning-color, #ff4444);
     }
 
     .streak-count {
       font-weight: 600;
-      color: var(--warning-color);
+      color: var(--warning-color, #ff4444);
     }
 
+
+
     .username {
-      margin-right: 1rem;
+      margin-right: 0.75rem;
       font-weight: 500;
     }
 
@@ -94,9 +99,18 @@ export class HeaderComponent implements OnInit {
   usernameInitial: string = '';
   userStreak: number = 0;
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) {
+    // Initialize user info immediately
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser) {
+      this.username = currentUser.username;
+      this.usernameInitial = currentUser.username.charAt(0).toUpperCase();
+      this.userStreak = currentUser.streak;
+    }
+  }
 
   ngOnInit(): void {
+    // Subscribe to changes
     this.authService.currentUser$.subscribe(user => {
       if (user) {
         this.username = user.username;
