@@ -2,17 +2,18 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TodayTasksComponent } from '../tasks/today-tasks/today-tasks.component';
 import { ExtraTasksComponent } from '../tasks/extra-tasks/extra-tasks.component';
-import { HeaderComponent } from '../header/header.component';
 import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, TodayTasksComponent, ExtraTasksComponent, HeaderComponent],
+  imports: [
+    CommonModule,
+    TodayTasksComponent,
+    ExtraTasksComponent
+  ],
   template: `
     <div class="dashboard-container">
-      <app-header [pageName]="'Dashboard'"></app-header>
-      
       <div class="dashboard-content">
         <div class="welcome-section">
           <h1>¡Bienvenido a tu día!</h1>

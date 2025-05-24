@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output, Inject } from '@angular
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TaskService } from '../../../services/task.service';
-import { Task, Environment, getEnvironmentString, TaskUpdatingDTO } from '../../../models/task.model';
+import { Task, WORK_ENVIRONMENT, PERSONAL_ENVIRONMENT, getEnvironmentString, TaskUpdatingDTO } from '../../../models/task.model';
 
 @Component({
   selector: 'app-task-detail',
@@ -62,8 +62,8 @@ import { Task, Environment, getEnvironmentString, TaskUpdatingDTO } from '../../
             <div class="form-group">
               <label for="environment">Entorno</label>
               <select id="environment" formControlName="environment" class="form-control">
-                <option [value]="Environment.WORK">Trabajo</option>
-                <option [value]="Environment.PERSONAL">Personal</option>
+                <option [value]="WORK_ENVIRONMENT">Trabajo</option>
+                <option [value]="PERSONAL_ENVIRONMENT">Personal</option>
               </select>
             </div>
             
@@ -232,7 +232,9 @@ export class TaskDetailComponent implements OnInit {
   task: Task | null = null;
   isEditing: boolean = false;
   taskForm: FormGroup | null = null;
-  Environment = Environment;
+  WORK_ENVIRONMENT = WORK_ENVIRONMENT;
+  PERSONAL_ENVIRONMENT = PERSONAL_ENVIRONMENT;
+
 
   constructor(
     @Inject(TaskService) private taskService: TaskService,
@@ -255,17 +257,14 @@ export class TaskDetailComponent implements OnInit {
     });
   }
 
-  getEnvironmentString(environment: Environment): string {
-    return environment === Environment.WORK ? 'Trabajo' : 'Personal';
+  getEnvironmentString(environment: number): string {
+    return environment === WORK_ENVIRONMENT ? 'Trabajo' : 'Personal';
   }
 
-  convertToEnvironment(num: number): Environment {
-    return num === 0 ? Environment.WORK : Environment.PERSONAL;
-  }
 
-  getEnvironmentStringFromNumber(environment: number | Environment): string {
-    const env = typeof environment === 'number' ? this.convertToEnvironment(environment) : environment;
-    return getEnvironmentString(env);
+
+  getEnvironmentStringFromNumber(environment: number): string {
+    return getEnvironmentString(environment);
   }
 
   isTaskLate(task: Task): boolean {

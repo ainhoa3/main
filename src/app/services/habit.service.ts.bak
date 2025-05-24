@@ -28,7 +28,7 @@ export class HabitService {
     }).pipe(
       map(habits => habits.map(habit => ({
         ...habit,
-        environment: habit._Environment === 'work' ? 1 : 0
+        environment: habit.environment === 'work' ? Environment.WORK : Environment.PERSONAL
       })))
     );
   }
@@ -41,7 +41,7 @@ export class HabitService {
     }).pipe(
       map(habit => ({
         ...habit,
-        environment: habit._Environment === 'work' ? 1 : 0
+        environment: habit.environment === 'work' ? 0 : 1
       }))
     );
   }
@@ -54,7 +54,7 @@ export class HabitService {
     }).pipe(
       map(habits => habits.map(habit => ({
         ...habit,
-        environment: habit._Environment === 'work' ? 1 : 0
+        environment: habit.environment === 'work' ? Environment.WORK : Environment.PERSONAL
       })))
     );
   }

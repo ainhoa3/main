@@ -1,6 +1,6 @@
 import { Component, Input, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Habit, Environment } from '../../../models/habit.model';
+import { Habit } from '../../../models/habit.model';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { HabitService } from '../../../services/habit.service';
 
@@ -34,7 +34,7 @@ import { HabitService } from '../../../services/habit.service';
           </div>
           <div class="habit-info-item">
             <strong>Entorno:</strong>
-            <span>{{ getEnvironmentString(habit?.environment ?? null) }}</span>
+            <span>{{ getEnvironmentString(habit?._Environment ?? null) }}</span>
           </div>
         </div>
       </div>
@@ -85,7 +85,7 @@ export class HabitDetailComponent {
   @Input() modalRef!: NgbModalRef;
   habit: Habit | null = null;
   loading = true;
-  Environment = Environment;
+
 
   constructor(
     @Inject(NgbModal) private modalService: NgbModal,
@@ -114,8 +114,7 @@ export class HabitDetailComponent {
     });
   }
 
-  getEnvironmentString(environment: Environment | null): string {
-    if (!environment) return '';
-    return environment === Environment.WORK ? 'Trabajo' : 'Personal';
+  getEnvironmentString(_Environment: string | null): string {
+    return _Environment === 'work' ? 'Trabajo' : 'Personal';
   }
 }

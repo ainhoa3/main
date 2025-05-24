@@ -1,28 +1,11 @@
-export enum Environment {
-  WORK = 'work',
-  PERSONAL = 'personal'
-}
+// Environment constants
+export const WORK_ENVIRONMENT = 1;
+export const PERSONAL_ENVIRONMENT = 0;
 
-export function numberToEnvironment(value: number): Environment {
-  switch(value) {
-    case 0: return Environment.WORK;
-    case 1: return Environment.PERSONAL;
-    default: return Environment.PERSONAL;
-  }
-}
-
-export function environmentToNumber(env: Environment): number {
+export function getEnvironmentString(env: number): string {
   switch(env) {
-    case Environment.WORK: return 0;
-    case Environment.PERSONAL: return 1;
-    default: return 1;
-  }
-}
-
-export function getEnvironmentString(env: Environment): string {
-  switch(env) {
-    case Environment.WORK: return 'Trabajo';
-    case Environment.PERSONAL: return 'Personal';
+    case WORK_ENVIRONMENT: return 'Trabajo';
+    case PERSONAL_ENVIRONMENT: return 'Personal';
     default: return 'Personal';
   }
 }
@@ -31,7 +14,7 @@ export interface Task {
   id: number;
   title: string;
   description: string;
-  environment: Environment;
+  environment: number;
   dueDate: Date;
   importance: number; // 1-5 star rating
   done: boolean;
@@ -41,7 +24,7 @@ export interface Task {
 export interface TaskCreatingDTO {
   title: string;
   description?: string;
-  environment: Environment;
+  environment: number;
   dueDate?: Date; // Optional for API compatibility
   importance: number; // 1-5 star rating
 }
@@ -49,7 +32,7 @@ export interface TaskCreatingDTO {
 export interface TaskUpdatingDTO {
   title: string;
   description: string;
-  environment: Environment;
+  environment: number;
   dueDate: string;
   importance: number; // 1-5 star rating
   done: boolean;
@@ -60,8 +43,8 @@ export interface TaskPreview {
   id: number;
   title: string;
   description: string;
-  environment: Environment;
-  importance: number; // 1-5 star rating
+  environment: number;
+  importance: number;
   done: boolean;
   dueDate: Date;
   priority: number;

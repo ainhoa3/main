@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TaskService } from '../../../services/task.service';
-import { TaskPreview, Task, Environment, numberToEnvironment, environmentToNumber, getEnvironmentString } from '../../../models/task.model';
+import { TaskPreview, Task, WORK_ENVIRONMENT, PERSONAL_ENVIRONMENT, getEnvironmentString } from '../../../models/task.model';
 import { TaskDetailComponent } from '../task-detail/task-detail.component';
 import { SpinnerComponent } from '../../shared/spinner/spinner.component';
 
@@ -13,8 +13,8 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
     <div class="extra-tasks-container">
       <h2 class="section-title">Tareas Extra</h2>
       <div class="tasks-filters">
-        <button class="btn btn-filter" (click)="filterEnvironment(Environment.WORK)" [ngClass]="{'selected': currentFilter === Environment.WORK}">Trabajo</button>
-        <button class="btn btn-filter" (click)="filterEnvironment(Environment.PERSONAL)" [ngClass]="{'selected': currentFilter === Environment.PERSONAL}">Personal</button>
+        <button class="btn btn-filter" (click)="filterEnvironment(WORK_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === WORK_ENVIRONMENT}">Trabajo</button>
+        <button class="btn btn-filter" (click)="filterEnvironment(PERSONAL_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === PERSONAL_ENVIRONMENT}">Personal</button>
         <button class="btn btn-filter" (click)="clearFilter()" [ngClass]="{'selected': currentFilter === null}">Todos</button>
       </div>
       <div class="tasks-container">
@@ -33,7 +33,7 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
           </div>
           <div class="task-content">
             <div class="task-title" [ngClass]="{'completed-title': task.done}">{{ task.title }}</div>
-            <div class="task-environment {{ getEnvironmentString(task.environment).toLowerCase() }}">{{ getEnvironmentString(task.environment) }}</div>
+            <div class="task-environment {{ task.environment === 0 ? 'work' : 'personal' }}">{{ getEnvironmentString(task.environment) }}</div>
             <div class="task-description-tag">{{ task.description }}</div>
           </div>
         </div>
@@ -105,19 +105,20 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
       font-size: 0.7rem;
       color: white;
       text-transform: capitalize;
-      padding: 0.2rem 0.5rem;
+      padding: 0.25rem 0.75rem;
       border-radius: 12px;
       display: inline-block;
       margin-top: 0.25rem;
       min-width: fit-content;
+      font-weight: 500;
     }
 
     .task-environment.work {
-      background-color: var(--primary-color);
+      background-color: #2196F3;
     }
 
     .task-environment.personal {
-      background-color: var(--secondary-color);
+      background-color: #4CAF50;
     }
 
     .task-description-tag {
@@ -207,10 +208,11 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
   `]
 })
 export class ExtraTasksComponent implements OnInit {
-  Environment = Environment;
+  WORK_ENVIRONMENT = WORK_ENVIRONMENT;
+  PERSONAL_ENVIRONMENT = PERSONAL_ENVIRONMENT;
   tasks: TaskPreview[] = [];
   filteredTasks: TaskPreview[] = [];
-  currentFilter: Environment | null = null;
+  currentFilter: number | null = null;
   selectedTask: Task | null = null;
   loading = false;
   showTaskDetail: boolean = false;
@@ -230,8 +232,9 @@ export class ExtraTasksComponent implements OnInit {
     if (this.currentFilter === null) {
       this.filteredTasks = this.allTasks;
     } else {
+      // 0 for personal, 1 for work
       this.filteredTasks = this.allTasks.filter((task: TaskPreview) => 
-        environmentToNumber(task.environment) === environmentToNumber(this.currentFilter!)
+        task.environment === this.currentFilter!
       );
     }
   }
@@ -275,10 +278,9 @@ export class ExtraTasksComponent implements OnInit {
     }
   }
 
-  filterEnvironment(environment: Environment): void {
+  filterEnvironment(environment: number): void {
     this.currentFilter = environment;
-    const environmentNumber = environmentToNumber(environment);
-    this.filteredTasks = this.allTasks.filter(task => environmentToNumber(task.environment) === environmentNumber);
+    this.filteredTasks = this.allTasks.filter(task => task.environment === environment);
     // Always keep tasks list populated to prevent hiding buttons
     this.tasks = this.allTasks;
     console.log('Filtering extra tasks:', { environment, filteredTasksCount: this.filteredTasks.length });
@@ -292,9 +294,12 @@ export class ExtraTasksComponent implements OnInit {
     console.log('Cleared extra tasks filter');
   }
 
-  getEnvironmentString(environment: Environment): string {
-    return getEnvironmentString(environment);
+  getEnvironmentString(environment: number): string {
+    // 0 for personal, 1 for work
+    return environment === 1 ? 'Trabajo' : 'Personal';
   }
+
+
 
   getPriorityClass(priority: number): string {
     if (priority >= 7) {

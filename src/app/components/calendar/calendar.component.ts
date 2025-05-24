@@ -1,7 +1,7 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TaskService } from '../../services/task.service';
-import { TaskPreview, getEnvironmentString, Environment } from '../../models/task.model';
+import { TaskPreview, getEnvironmentString, WORK_ENVIRONMENT, PERSONAL_ENVIRONMENT } from '../../models/task.model';
 import { TaskDetailComponent } from '../tasks/task-detail/task-detail.component';
 import { SpinnerComponent } from '../../components/shared/spinner/spinner.component';
 
@@ -314,14 +314,8 @@ export class CalendarComponent implements OnInit {
     this.currentYear = this.currentDate.getFullYear();
   }
 
-  // Convert number from API to Environment enum
-  convertToEnvironment(num: number): Environment {
-    return num === 0 ? Environment.WORK : Environment.PERSONAL;
-  }
-
-  getEnvironmentString(environment: number | Environment): string {
-    const env = typeof environment === 'number' ? this.convertToEnvironment(environment) : environment;
-    return getEnvironmentString(env);
+  getEnvironmentString(environment: number): string {
+    return environment === WORK_ENVIRONMENT ? 'Trabajo' : 'Personal';
   }
 
   ngOnInit(): void {

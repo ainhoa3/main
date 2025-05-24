@@ -2,7 +2,7 @@ import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TaskService } from '../../../services/task.service';
-import { Environment, TaskCreatingDTO } from '../../../models/task.model';
+import { WORK_ENVIRONMENT, PERSONAL_ENVIRONMENT, TaskCreatingDTO } from '../../../models/task.model';
 import { Router } from '@angular/router';
 import { SpinnerComponent } from '../../shared/spinner/spinner.component';
 
@@ -37,8 +37,8 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
           <div class="form-group half">
             <label for="environment">Entorno</label>
             <select id="environment" formControlName="environment" class="form-control">
-              <option [value]="Environment.WORK">Trabajo</option>
-              <option [value]="Environment.PERSONAL">Personal</option>
+              <option value="0">Trabajo</option>
+              <option value="1">Personal</option>
             </select>
             <div *ngIf="taskForm.get('environment')?.invalid && (taskForm.get('environment')?.dirty || taskForm.get('environment')?.touched)" class="error-message">
               Selecciona un entorno
@@ -182,7 +182,7 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
 })
 export class CreateTaskComponent implements OnInit, AfterViewInit {
   taskForm: FormGroup;
-  Environment = Environment;
+
   submitting = false;
   successMessage = '';
   formError = '';
@@ -200,7 +200,7 @@ export class CreateTaskComponent implements OnInit, AfterViewInit {
       description: ['', [
         Validators.required
       ]], 
-      environment: [Environment.PERSONAL, [
+      environment: [PERSONAL_ENVIRONMENT, [
         Validators.required
       ]], 
       date: ['', [

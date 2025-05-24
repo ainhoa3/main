@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { HabitService } from '../../../services/habit.service';
 import { HabitCreatingDTO } from '../../../models/habit.model';
 import { Router } from '@angular/router';
-import { Environment } from '../../../models/task.model';
+import { WORK_ENVIRONMENT, PERSONAL_ENVIRONMENT } from '../../../models/task.model';
 import { SpinnerComponent } from '../../shared/spinner/spinner.component';
 
 @Component({
@@ -36,8 +36,8 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
         <div class="form-group">
           <label for="environment">Entorno</label>
           <select id="environment" formControlName="environment" class="form-control">
-            <option [value]="Environment.WORK">Trabajo</option>
-            <option [value]="Environment.PERSONAL">Personal</option>
+            <option value="0">Trabajo</option>
+            <option value="1">Personal</option>
           </select>
           <div *ngIf="habitForm.get('environment')?.invalid && (habitForm.get('environment')?.dirty || habitForm.get('environment')?.touched)" class="error-message">
             Selecciona un entorno
@@ -149,7 +149,6 @@ export class CreateHabitComponent {
   submitting = false;
   successMessage = '';
   formError = '';
-  Environment = Environment;
 
   constructor(
     private fb: FormBuilder,
@@ -159,7 +158,7 @@ export class CreateHabitComponent {
     this.habitForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3)]],
       description: ['', [Validators.required]],
-      environment: [Environment.PERSONAL, [Validators.required]],
+      environment: [PERSONAL_ENVIRONMENT, [Validators.required]],
       done: [false],
       programmDays: ['', [Validators.required, Validators.min(1)]],
       startingDay: ['', [Validators.required]]

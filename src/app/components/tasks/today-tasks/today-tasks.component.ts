@@ -1,21 +1,23 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { TaskService } from '../../../services/task.service';
-import { TaskPreview, Environment, getEnvironmentString } from '../../../models/task.model';
-import { TaskDetailComponent } from '../../tasks/task-detail/task-detail.component';
+import { FormsModule } from '@angular/forms';
+import { TaskDetailComponent } from '../task-detail/task-detail.component';
 import { SpinnerComponent } from '../../shared/spinner/spinner.component';
+import { TaskService } from '../../../services/task.service';
+import { Task, TaskPreview, TaskUpdatingDTO, WORK_ENVIRONMENT, PERSONAL_ENVIRONMENT } from '../../../models/task.model';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 @Component({
   selector: 'app-today-tasks',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, TaskDetailComponent, SpinnerComponent],
+  imports: [CommonModule, FormsModule, TaskDetailComponent, SpinnerComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="today-tasks-container">
       <h2 class="section-title">Tareas de Hoy</h2>
       <div class="tasks-filters">
-        <button class="btn btn-filter" (click)="filterEnvironment(Environment.WORK)" [ngClass]="{'selected': currentFilter === Environment.WORK}">Trabajo</button>
-        <button class="btn btn-filter" (click)="filterEnvironment(Environment.PERSONAL)" [ngClass]="{'selected': currentFilter === Environment.PERSONAL}">Personal</button>
+        <button class="btn btn-filter" (click)="filterEnvironment(WORK_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === WORK_ENVIRONMENT}">Trabajo</button>
+        <button class="btn btn-filter" (click)="filterEnvironment(PERSONAL_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === PERSONAL_ENVIRONMENT}">Personal</button>
         <button class="btn btn-filter" (click)="clearFilter()" [ngClass]="{'selected': currentFilter === null}">Todos</button>
       </div>
       <div class="tasks-container">
@@ -24,7 +26,6 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
             class="task-item" 
             [class.completed]="task.done" 
             [class.selected]="selectedTaskId === task.id"
-            [ngClass]="getPriorityClass(task.priority)"
             (click)="openTaskDetail(task.id)">
             <div class="task-checkbox">
               <input 
@@ -36,7 +37,7 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
             </div>
             <div class="task-content">
               <div class="task-title" [ngClass]="{'completed-title': task.done}">{{ task.title }}</div>
-              <div class="task-environment {{ getEnvironmentString(task.environment).toLowerCase() }}">{{ getEnvironmentString(task.environment) }}</div>
+              <div class="task-environment" [ngClass]="{'work': task.environment === WORK_ENVIRONMENT, 'personal': task.environment === PERSONAL_ENVIRONMENT}">{{ getEnvironmentString(task.environment) }}</div>
               <div class="task-description">{{ task.description }}</div>
             </div>
           </div>
@@ -49,366 +50,220 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
         <p>No hay tareas en este filtro</p>
       </div>
       <div class="no-tasks" *ngIf="tasks.length === 0">
-        <p>No hay tareas para hoy</p>
+        <p>No hay tareas disponibles</p>
       </div>
     </div>
-    
     <app-task-detail 
       *ngIf="showTaskDetail && selectedTaskId !== null" 
       [taskId]="selectedTaskId!" 
       (close)="closeTaskDetail()"
-      (taskUpdated)="refreshTasks()"
+      (taskUpdated)="taskUpdated()"
+      (taskDeleted)="taskDeleted()"
     ></app-task-detail>
   `,
-  styles: [`
-    /* From Uiverse.io by 00Kubi */ 
-    .neon-checkbox {
-      --primary: #00ffaa;
-      --primary-dark: #00cc88;
-      --primary-light: #88ffdd;
-      --size: 30px;
-      position: relative;
-      width: var(--size);
-      height: var(--size);
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
+  styles: [`.today-tasks-container {
+    padding: 1rem;
+    height: 100%;
+    overflow-y: auto;
+  }
 
-    .neon-checkbox input {
-      display: none;
-    }
+  .section-title {
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    color: var(--text-color);
+  }
 
-    .neon-checkbox__frame {
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
+  .tasks-list {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 
-    .neon-checkbox__box {
-      position: absolute;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.8);
-      border-radius: 4px;
-      border: 2px solid var(--primary-dark);
-      transition: all 0.4s ease;
-    }
+  .tasks-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
 
-    .neon-checkbox__check-container {
-      position: absolute;
-      inset: 2px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+  .loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+  }
 
-    .neon-checkbox__check {
-      width: 80%;
-      height: 80%;
-      fill: none;
-      stroke: var(--primary);
-      stroke-width: 3;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      stroke-dasharray: 40;
-      stroke-dashoffset: 40;
-      transform-origin: center;
-      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
+  .task-item {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    padding: 0.75rem;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+  }
 
-    .neon-checkbox__glow {
-      position: absolute;
-      inset: -2px;
-      border-radius: 6px;
-      background: var(--primary);
-      opacity: 0;
-      filter: blur(8px);
-      transform: scale(1.2);
-      transition: all 0.4s ease;
-    }
+  .task-item:hover {
+    box-shadow: var(--shadow-md);
+  }
 
-    .neon-checkbox__borders {
-      position: absolute;
-      inset: 0;
-      border-radius: 4px;
-      overflow: hidden;
-    }
+  .task-checkbox {
+    margin-right: 1rem;
+    display: flex;
+    align-items: center;
+  }
 
-    .neon-checkbox__borders span {
-      position: absolute;
-      width: 40px;
-      height: 1px;
-      background: var(--primary);
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
+  .task-checkbox input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--success-color);
+    border-radius: 4px;
+    border: 2px solid var(--border-color);
+    background-color: var(--background-color);
+    transition: all 0.2s ease;
+  }
 
-    .neon-checkbox__borders span:nth-child(1) {
-      top: 0;
-      left: -100%;
-      animation: borderFlow1 2s linear infinite;
-    }
+  .task-checkbox input:hover {
+    border-color: var(--success-color);
+  }
 
-    .neon-checkbox__borders span:nth-child(2) {
-      top: -100%;
-      right: 0;
-      width: 1px;
-      height: 40px;
-      animation: borderFlow2 2s linear infinite;
-    }
+  .task-checkbox input:checked {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+  }
 
-    .neon-checkbox__borders span:nth-child(3) {
-      bottom: 0;
-      right: -100%;
-      animation: borderFlow3 2s linear infinite;
-    }
+  .task-content {
+    flex-grow: 1;
+  }
 
-    .neon-checkbox__borders span:nth-child(4) {
-      bottom: -100%;
-      left: 0;
-      width: 1px;
-      height: 40px;
-      animation: borderFlow4 2s linear infinite;
-    }
+  .task-title {
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+  }
 
-    .neon-checkbox__particles span {
-      position: absolute;
-      width: 4px;
-      height: 4px;
-      background: var(--primary);
-      border-radius: 50%;
-      opacity: 0;
-      pointer-events: none;
-      top: 50%;
-      left: 50%;
-      box-shadow: 0 0 6px var(--primary);
-    }
+  .completed-title {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+  }
 
-    .neon-checkbox__rings {
-      position: absolute;
-      inset: -20px;
-      pointer-events: none;
-    }
+  .task-environment {
+    font-size: 0.7rem;
+    color: white;
+    text-transform: capitalize;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    display: inline-block;
+    margin-top: 0.25rem;
+    min-width: fit-content;
+    font-weight: 500;
+  }
 
-    .neon-checkbox__rings .ring {
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      border: 1px solid var(--primary);
-      opacity: 0;
-      transform: scale(0);
-    }
+  .task-environment.work {
+    background-color: #2196F3;
+  }
 
-    .neon-checkbox__sparks span {
-      position: absolute;
-      width: 20px;
-      height: 1px;
-      background: linear-gradient(90deg, var(--primary), transparent);
-      opacity: 0;
-    }
+  .task-environment.personal {
+    background-color: #4CAF50;
+  }
 
-    .today-tasks-container {
-      padding: 1rem;
-      height: 100%;
-      overflow-y: auto;
-    }
+  .task-description {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+  }
 
-    .section-title {
-      margin-bottom: 1rem;
-      font-size: 1.2rem;
-      color: var(--text-color);
-    }
+  .priority-high {
+    border-left: 3px solid var(--error-color);
+  }
 
-    .tasks-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
+  .priority-medium {
+    border-left: 3px solid var(--warning-color);
+  }
 
-    .tasks-container {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
+  .priority-low {
+    border-left: 3px solid var(--success-color);
+  }
 
-    .loading-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-    }
+  .completed {
+    opacity: 0.7;
+  }
 
-    .tasks-list {
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
+  .selected {
+    background-color: var(--success-color-light);
+    border-left: 3px solid var(--success-color);
+  }
 
-    .task-item {
-      display: flex;
-      align-items: center;
-      background-color: white;
-      padding: 0.75rem;
-      border-radius: var(--border-radius-sm);
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      box-shadow: var(--shadow-sm);
-    }
+  .no-tasks {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+  }
 
-    .task-item:hover {
-      box-shadow: var(--shadow-md);
-    }
+  .tasks-filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
 
-    .task-checkbox {
-      margin-right: 1rem;
-      display: flex;
-      align-items: center;
-    }
+  .tasks-filters .btn-filter {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+  }
 
-    .task-checkbox input {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      accent-color: var(--success-color);
-      border-radius: 4px;
-      border: 2px solid var(--border-color);
-      background-color: var(--background-color);
-      transition: all 0.2s ease;
-    }
-
-    .task-checkbox input:hover {
-      border-color: var(--success-color);
-    }
-
-    .task-checkbox input:checked {
-      background-color: var(--success-color);
-      border-color: var(--success-color);
-    }
-
-    .task-content {
-      flex-grow: 1;
-    }
-
-    .task-title {
-      font-weight: 500;
-      margin-bottom: 0.2rem;
-    }
-
-    .completed-title {
-      text-decoration: line-through;
-      color: var(--text-secondary);
-    }
-
-    .task-environment {
-      font-size: 0.7rem;
-      color: white;
-      text-transform: capitalize;
-      padding: 0.2rem 0.5rem;
-      border-radius: 12px;
-      display: inline-block;
-      margin-top: 0.25rem;
-      min-width: fit-content;
-    }
-
-    .task-environment.work {
-      background-color: var(--primary-color);
-    }
-
-    .task-environment.personal {
-      background-color: var(--secondary-color);
-    }
-
-    .task-description {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-      margin-top: 0.25rem;
-    }
-
-    .priority-high {
-      border-left: 3px solid var(--error-color);
-    }
-
-    .priority-medium {
-      border-left: 3px solid var(--warning-color);
-    }
-
-    .priority-low {
-      border-left: 3px solid var(--success-color);
-    }
-
-    .completed {
-      opacity: 0.7;
-    }
-
-    .selected {
-      background-color: var(--success-color-light);
-      border-left: 3px solid var(--success-color);
-    }
-
-    .no-tasks {
-      text-align: center;
-      padding: 2rem;
-      color: var(--text-secondary);
-    }
-
-    .tasks-filters {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .tasks-filters .btn-filter {
-      background-color: transparent;
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
-    }
-
-    .tasks-filters .btn-filter.selected {
-      background-color: #2ecc71;
-      color: white;
-    }
-  `]
+  .tasks-filters .btn-filter.selected {
+    background-color: #2ecc71;
+    color: white;
+  }
+`]
 })
 export class TodayTasksComponent implements OnInit {
-  Environment = Environment;
-
-  filterEnvironment(environment: Environment): void {
-    this.currentFilter = environment;
-    const environmentNumber = this.convertToEnvironment(0); // Convertir WORK a número
-    this.filteredTasks = this.allTasks.filter(task => this.convertToEnvironment(0) === task.environment);
-    // Always keep tasks list populated to prevent hiding buttons
-    this.tasks = this.filteredTasks;
-    console.log('Filtering tasks:', { environment, filteredTasksCount: this.filteredTasks.length });
-  }
-
-  clearFilter(): void {
-    this.currentFilter = null;
-    this.filteredTasks = this.allTasks;
-    this.tasks = this.allTasks;
-  }
-
-  getEnvironmentString(environment: Environment): string {
-    return getEnvironmentString(environment);
-  }
+  WORK_ENVIRONMENT = WORK_ENVIRONMENT;
+  PERSONAL_ENVIRONMENT = PERSONAL_ENVIRONMENT;
 
   allTasks: TaskPreview[] = [];
   filteredTasks: TaskPreview[] = [];
-  currentFilter: Environment | null = null;
+  currentFilter: number | null = null;
   tasks: TaskPreview[] = [];
   showTaskDetail: boolean = false;
   selectedTaskId: number | null = null;
   loading = false;
 
-  constructor(private taskService: TaskService) {}
-
-  // Convert number from API to Environment enum
-  convertToEnvironment(num: number): Environment {
-    return num === 0 ? Environment.WORK : Environment.PERSONAL;
-  }
+  constructor(
+    @Inject(TaskService) private taskService: TaskService
+  ) {}
 
   ngOnInit(): void {
     this.loadTasks();
+  }
+
+  getEnvironmentString(environment: number): string {
+    return environment === WORK_ENVIRONMENT ? 'Trabajo' : 'Personal';
+  }
+
+  filterEnvironment(environment: number): void {
+    this.currentFilter = environment;
+    this.applyFilter();
+  }
+
+  applyFilter(): void {
+    if (this.currentFilter === null) {
+      this.filteredTasks = this.allTasks;
+    } else {
+      // 0 for personal, 1 for work
+      this.filteredTasks = this.allTasks.filter(task => task.environment === this.currentFilter);
+    }
+    this.tasks = this.filteredTasks;
+    console.log('Filtering tasks:', { environment: this.currentFilter, filteredTasksCount: this.filteredTasks.length });
+  }
+
+  clearFilter(): void {
+    this.currentFilter = null;
+    this.filteredTasks = this.allTasks;
+    this.tasks = this.filteredTasks;
   }
 
   loadTasks(): void {
@@ -436,10 +291,7 @@ export class TodayTasksComponent implements OnInit {
           // Update the task locally to prevent flickering
           const taskIndex = this.filteredTasks.findIndex(task => task.id === id);
           if (taskIndex !== -1) {
-            this.filteredTasks[taskIndex] = {
-              ...this.filteredTasks[taskIndex],
-              done: true
-            };
+            this.filteredTasks[taskIndex].done = true;
           }
           // Add a small delay before refreshing to ensure local state update is completed
           setTimeout(() => {
@@ -476,5 +328,21 @@ export class TodayTasksComponent implements OnInit {
 
   refreshTasks(): void {
     this.loadTasks();
+  }
+
+  taskUpdated(): void {
+    // Update local state using the selectedTaskId
+    if (this.selectedTaskId) {
+      this.loadTasks();
+    }
+  }
+
+  taskDeleted(): void {
+    // Remove from local state using the selectedTaskId
+    if (this.selectedTaskId) {
+      this.allTasks = this.allTasks.filter(task => task.id !== this.selectedTaskId);
+      this.applyFilter();
+      this.closeTaskDetail();
+    }
   }
 }

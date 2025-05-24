@@ -13,7 +13,7 @@
             <div *ngIf="!isEditing && habitDetail" class="habit-view">
               <h3 class="habit-title">{{ habitDetail.title }}</h3>
               <div class="habit-meta">
-                <span class="habit-environment">{{ getEnvironmentString(habitDetail.environment) }}</span>
+                <span class="habit-environment">{{ getEnvironmentString(habitDetail._Environment) }}</span>
                 <span class="habit-date">Último día: {{ habitDetail.lastDay | date:'dd/MM/yyyy' }}</span>
               </div>
               <p class="habit-description">{{ habitDetail.description }}</p>
@@ -51,8 +51,8 @@
               <div class="form-group">
                 <label for="environment">Entorno</label>
                 <select id="environment" formControlName="environment" class="form-control">
-                  <option [value]="Environment.WORK">Trabajo</option>
-                  <option [value]="Environment.PERSONAL">Personal</option>
+                  <option value="0">Trabajo</option>
+                  <option value="1">Personal</option>
                 </select>
               </div>
               
@@ -89,24 +89,42 @@
       <button class="btn btn-primary" routerLink="/create-habit">Nuevo Hábito</button>
     </div>
     
-    <div class="habits-filters">
-      <button class="btn btn-filter" (click)="filterEnvironment(Environment.WORK)" [ngClass]="{'selected': currentFilter === Environment.WORK}">Trabajo</button>
-      <button class="btn btn-filter" (click)="filterEnvironment(Environment.PERSONAL)" [ngClass]="{'selected': currentFilter === Environment.PERSONAL}">Personal</button>
-      <button class="btn btn-filter" (click)="clearFilter()" [ngClass]="{'selected': currentFilter === null}">Todos</button>
-    </div>
-    <div class="habits-list" *ngIf="filteredHabits.length > 0">
-      <div *ngFor="let habit of filteredHabits" 
-        class="habit-item"
-        [ngClass]="getEnvironmentClass(habit.environment)"
-        (click)="openHabitDetail(habit.id)">
-        <h3>{{ habit.title }}</h3>
-        <div class="habit-environment">{{ getEnvironmentString(habit.environment) }}</div>
+    <div class="habits-container">
+      <div class="habits-filters">
+        <button class="btn btn-filter" (click)="filterEnvironment('work')" [ngClass]="{'selected': currentFilter === 'work'}">Trabajo</button>
+        <button class="btn btn-filter" (click)="filterEnvironment('personal')" [ngClass]="{'selected': currentFilter === 'personal'}">Personal</button>
+        <button class="btn btn-filter" (click)="clearFilter()" [ngClass]="{'selected': currentFilter === null}">Todos</button>
       </div>
-    </div>
-    
-    <div class="no-habits" *ngIf="filteredHabits.length === 0">
-      <p>No hay hábitos para hoy</p>
-      <button class="btn btn-primary" routerLink="/create-habit">Crear nuevo hábito</button>
+      <div class="habits-list" *ngIf="filteredHabits.length > 0">
+        <div *ngFor="let habit of filteredHabits" 
+          class="habit-item" 
+          [class.completed]="habit.done" 
+          [class.selected]="selectedHabitId === habit.id"
+          (click)="openHabitDetail(habit.id)">
+          <div class="habit-checkbox">
+            <input 
+              type="checkbox" 
+              [checked]="habit.done" 
+              (click)="$event.stopPropagation()"
+              (change)="markAsDone(habit.id)"
+            >
+          </div>
+          <div class="habit-content">
+            <div class="habit-title" [ngClass]="{'completed-title': habit.done}">{{ habit.title }}</div>
+            <div class="habit-environment" [ngClass]="{'work': convertEnvironmentToNumber(habit._Environment) === 1, 'personal': convertEnvironmentToNumber(habit._Environment) === 0}">{{ getEnvironmentString(habit._Environment) }}</div>
+            <div class="habit-description">{{ habit.description }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="loading-container" *ngIf="loading">
+        <app-spinner></app-spinner>
+      </div>
+      <div class="no-habits" *ngIf="!loading && filteredHabits.length === 0 && habits.length > 0">
+        <p>No hay hábitos en este filtro</p>
+      </div>
+      <div class="no-habits" *ngIf="habits.length === 0">
+        <p>No hay hábitos disponibles</p>
+      </div>
     </div>
   </div>
 </div>

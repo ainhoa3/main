@@ -1,6 +1,3 @@
-import { Environment } from './task.model';
-export { Environment };
-
 export interface Habit {
   id: number;
   title: string;
@@ -8,7 +5,7 @@ export interface Habit {
   done: boolean;
   programmDays: number;
   lastDay: Date;
-  environment: Environment;
+  _Environment: string;
 }
 
 export interface HabitCreatingDTO {
@@ -17,7 +14,7 @@ export interface HabitCreatingDTO {
   done: boolean;
   programmDays: number;
   startingDay: Date;
-  environment: Environment;
+  environment: number;
 }
 
 export interface HabitUpdatingDTO {
@@ -26,12 +23,15 @@ export interface HabitUpdatingDTO {
   done: boolean;
   programmDays: number;
   lastDay: Date;
-  environment: Environment;
+  environment: number;
 }
 
 export interface HabitPreview {
   id: number;
   title: string;
   description: string;
-  environment: Environment;
+  _Environment: string;
+  done: boolean;
+  programmDays: number;
+  lastDay: Date;
 }

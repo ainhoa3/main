@@ -1,17 +1,19 @@
-import { Component, OnInit, Inject, ViewChild } from '@angular/core';
+import { Component, OnInit, Inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { HabitService } from '../../services/habit.service';
 import { Habit, HabitPreview, HabitUpdatingDTO } from '../../models/habit.model';
-import { Environment, numberToEnvironment, environmentToNumber, getEnvironmentString } from '../../models/task.model';
-import { HeaderComponent } from '../header/header.component';
 import { NgbModal, NgbModalRef, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { TemplateRef } from '@angular/core';
+import { SpinnerComponent } from '../../shared/spinner/spinner.component';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 @Component({
   selector: 'app-habits',
   standalone: true,
-  imports: [CommonModule, HeaderComponent, NgbModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbModule, SpinnerComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './habits.component.html',
   styleUrls: ['./habits.component.css']
 })
@@ -19,20 +21,28 @@ export class HabitsComponent implements OnInit {
   habits: HabitPreview[] = [];
   allHabits: HabitPreview[] = [];
   filteredHabits: HabitPreview[] = [];
-  Environment = Environment;
-  currentFilter: Environment | null = null;
+
+  currentFilter: string | null = null;
   selectedHabitId: number | null = null;
   habitDetail!: Habit;
   modalRef!: NgbModalRef;
   @ViewChild('modalContent') modalContent!: TemplateRef<any>;
-  isEditing: boolean = false;
+  isEditing = false;
   habitForm!: FormGroup;
+  loading = false;
 
   constructor(
     private habitService: HabitService,
     @Inject(NgbModal) private modalService: NgbModal,
     private fb: FormBuilder
   ) {
+    this.habitForm = this.fb.group({
+      title: ['', [Validators.required]],
+      description: [''],
+      programmDays: [1, [Validators.min(1)]],
+      startingDay: [new Date()],
+      environment: [0]
+    });
     this.loadHabits();
   }
 
@@ -49,7 +59,7 @@ export class HabitsComponent implements OnInit {
     });
   }
 
-  filterEnvironment(environment: Environment): void {
+  filterEnvironment(environment: string): void {
     this.currentFilter = environment;
     this.applyFilter();
   }
@@ -61,19 +71,57 @@ export class HabitsComponent implements OnInit {
 
   applyFilter(): void {
     if (this.currentFilter === null) {
-      this.filteredHabits = this.allHabits;
+      this.filteredHabits = [...this.allHabits];
     } else {
-      this.filteredHabits = this.allHabits.filter(habit => habit.environment === this.currentFilter);
+      this.filteredHabits = this.allHabits.filter(habit => {
+        // Handle both string and number comparisons
+        const envValue = habit._Environment?.toString().toLowerCase();
+        const filterValue = this.currentFilter?.toLowerCase();
+        return envValue === filterValue || 
+               (filterValue === 'work' && (envValue === '1' || envValue === 'work')) ||
+               (filterValue === 'personal' && (envValue === '0' || envValue === 'personal'));
+      });
     }
   }
 
-  getEnvironmentClass(environment: Environment): string {
-    if (environment === Environment.WORK) return 'work-habit';
-    return 'personal-habit';
+  markAsDone(habitId: number): void {
+    const habit = this.habits.find(h => h.id === habitId);
+    if (habit) {
+      const updatedHabit: HabitUpdatingDTO = {
+        title: habit.title,
+        description: habit.description,
+        done: !habit.done,
+        programmDays: habit.programmDays,
+        lastDay: habit.lastDay,
+        environment: habit._Environment === 'work' ? 1 : 0
+      };
+      
+      this.habitService.updateHabit(habitId, updatedHabit).subscribe(() => {
+        const index = this.habits.findIndex(h => h.id === habitId);
+        if (index !== -1) {
+          this.habits[index] = {
+            id: habit.id,
+            title: habit.title,
+            description: habit.description,
+            _Environment: habit._Environment,
+            done: !habit.done,
+            programmDays: habit.programmDays,
+            lastDay: habit.lastDay
+          };
+          this.applyFilter();
+        }
+      });
+    }
   }
 
-  getEnvironmentString(environment: Environment): string {
-    return environment === Environment.WORK ? 'Trabajo' : 'Personal';
+
+
+  getEnvironmentString(_Environment: string): string {
+    return _Environment === 'work' ? 'Trabajo' : 'Personal';
+  }
+
+  convertEnvironmentToNumber(_Environment: string): number {
+    return _Environment === 'work' ? 1 : 0;
   }
 
   ngOnInit(): void {
@@ -116,7 +164,7 @@ export class HabitsComponent implements OnInit {
     this.habitForm = this.fb.group({
       title: [this.habitDetail.title, [Validators.required]],
       description: [this.habitDetail.description],
-      environment: [this.habitDetail.environment],
+      _Environment: [this.habitDetail._Environment],
       programmDays: [this.habitDetail.programmDays, [Validators.min(1)]],
       lastDay: [this.habitDetail.lastDay],
       done: [this.habitDetail.done]
@@ -133,7 +181,7 @@ export class HabitsComponent implements OnInit {
       const updatedHabit: HabitUpdatingDTO = {
         title: this.habitForm.get('title')?.value,
         description: this.habitForm.get('description')?.value,
-        environment: this.habitForm.get('environment')?.value,
+        environment: this.convertEnvironmentToNumber(this.habitForm.get('_Environment')?.value),
         programmDays: this.habitForm.get('programmDays')?.value,
         lastDay: this.habitForm.get('lastDay')?.value,
         done: this.habitForm.get('done')?.value
@@ -148,7 +196,10 @@ export class HabitsComponent implements OnInit {
               id: this.habitDetail.id,
               title: updated.title,
               description: updated.description,
-              environment: updated.environment
+              _Environment: updated._Environment,
+              done: this.habits[index].done,
+              programmDays: this.habits[index].programmDays,
+              lastDay: this.habits[index].lastDay
             };
             this.filteredHabits = [...this.habits];
             this.applyFilter();

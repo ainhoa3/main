@@ -5,10 +5,14 @@ import { NgbModal, NgbModalRef, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { TaskService } from '../../services/task.service';
 import { HabitService } from '../../services/habit.service';
 import { TaskPreview } from '../../models/task.model';
-import { HabitPreview, Environment, Habit } from '../../models/habit.model';
+import { HabitPreview, Habit } from '../../models/habit.model';
+import { WORK_ENVIRONMENT, PERSONAL_ENVIRONMENT } from '../../models/task.model';
 import { FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
+
+
 import { TaskDetailComponent } from '../tasks/task-detail/task-detail.component';
 import { SpinnerComponent } from '../shared/spinner/spinner.component';
+import { OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-search',
@@ -45,7 +49,7 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
               <div *ngIf="!isEditing && habitDetail" class="habit-view">
                 <h3 class="habit-title">{{ habitDetail.title }}</h3>
                 <div class="habit-meta">
-                  <span class="habit-environment">{{ getEnvironmentString(habitDetail.environment) }}</span>
+                  <div class="habit-environment {{ habitDetail._Environment === 'work' ? 'work' : 'personal' }}">{{ getEnvironmentString(habitDetail._Environment) }}</div>
                   <span class="habit-date">Último día: {{ habitDetail.lastDay | date:'dd/MM/yyyy' }}</span>
                 </div>
                 <p class="habit-description">{{ habitDetail.description }}</p>
@@ -83,8 +87,8 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
                 <div class="form-group">
                   <label for="environment">Entorno</label>
                   <select id="environment" formControlName="environment" class="form-control">
-                    <option [value]="Environment.WORK">Trabajo</option>
-                    <option [value]="Environment.PERSONAL">Personal</option>
+                    <option value="0">Trabajo</option>
+                    <option value="1">Personal</option>
                   </select>
                 </div>
                 
@@ -143,7 +147,7 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
               [ngClass]="getPriorityClass(task.priority)"
               (click)="openTaskDetail(task.id)">
               <h3 [ngClass]="{'completed-title': task.done}">{{ task.title }}</h3>
-              <div class="task-environment {{ getEnvironmentString(task.environment).toLowerCase() }}">{{ getEnvironmentString(task.environment) }}</div>
+              <div class="task-environment {{ task.environment === WORK_ENVIRONMENT ? 'work' : 'personal' }}">{{ getEnvironmentString(task.environment) }}</div>
               <p class="task-description">{{ task.description }}</p>
             </div>
           </div>
@@ -159,7 +163,7 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
               class="result-item habit-result"
               (click)="openHabitDetail(habit.id)">
               <h3>{{ habit.title }}</h3>
-              <div class="habit-environment">{{ habit.environment }}</div>
+              <div class="habit-environment {{ habit._Environment === 'work' ? 'work' : 'personal' }}">{{ getEnvironmentString(habit._Environment) }}</div>
             </div>
           </div>
         </div>
@@ -245,14 +249,6 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
       padding: 1.5rem;
     }
 
-    .modal-footer {
-      padding: 1.5rem;
-      border-top: 1px solid #e0e0e0;
-      display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
-    }
-
     .habit-view {
       text-align: left;
     }
@@ -269,6 +265,26 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
       gap: 1rem;
       color: #666;
       font-size: 0.9em;
+    }
+
+    .habit-environment {
+      font-size: 0.7rem;
+      color: white;
+      text-transform: capitalize;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      display: inline-block;
+      margin-top: 0.25rem;
+      min-width: fit-content;
+      font-weight: 500;
+    }
+
+    .habit-environment.work {
+      background-color: #2196F3;
+    }
+
+    .habit-environment.personal {
+      background-color: #4CAF50;
     }
 
     .habit-description {
@@ -494,19 +510,20 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
       font-size: 0.7rem;
       color: white;
       text-transform: capitalize;
-      padding: 0.2rem 0.5rem;
+      padding: 0.25rem 0.75rem;
       border-radius: 12px;
       display: inline-block;
       margin-top: 0.25rem;
       min-width: fit-content;
+      font-weight: 500;
     }
 
     .task-environment.work {
-      background-color: var(--primary-color);
+      background-color: #2196F3;
     }
 
     .task-environment.personal {
-      background-color: var(--secondary-color);
+      background-color: #4CAF50;
     }
 
     .task-description {
@@ -749,7 +766,29 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
     }
   `]
 })
-export class SearchComponent {
+export class SearchComponent implements OnInit {
+  WORK_ENVIRONMENT = WORK_ENVIRONMENT;
+  PERSONAL_ENVIRONMENT = PERSONAL_ENVIRONMENT;
+  searchForm!: FormGroup;
+
+  getEnvironmentString(environment: number | string): string {
+    if (typeof environment === 'number') {
+      return environment === WORK_ENVIRONMENT ? 'Trabajo' : 'Personal';
+    }
+    return environment === 'work' ? 'Trabajo' : 'Personal';
+  }
+
+  ngOnInit(): void {
+    this.initializeForm();
+  }
+
+  private initializeForm(): void {
+    this.searchForm = this.fb.group({
+      query: ['', Validators.required],
+      environment: [0] // Default to Work environment (0)
+    });
+  }
+
   @ViewChild('modalContent') habitModalContent!: TemplateRef<any>;
   modalRef: NgbModalRef | null = null;
   habitDetail: Habit | null = null;
@@ -757,7 +796,7 @@ export class SearchComponent {
   habitForm!: FormGroup;
   
   // Hacer que Environment esté disponible en la plantilla
-  Environment = Environment;
+
   
   // Declarar controles del formulario para TypeScript
   get titleControl() { return this.habitForm?.get('title') as FormControl; }
@@ -776,8 +815,8 @@ export class SearchComponent {
   selectedHabitId: number | null = null;
   loading: boolean = false;
   
-  getEnvironmentString(environment: Environment): string {
-    return environment === Environment.WORK ? 'Trabajo' : 'Personal';
+  convertEnvironmentToNumber(environment: number): number {
+    return environment === 0 ? 0 : 1;
   }
 
   constructor(
@@ -891,7 +930,7 @@ export class SearchComponent {
     this.habitForm = this.fb.group({
       title: [this.habitDetail.title, [Validators.required]],
       description: [this.habitDetail.description],
-      environment: [this.habitDetail.environment],
+      _Environment: [this.habitDetail._Environment],
       programmDays: [this.habitDetail.programmDays, [Validators.min(1)]],
       lastDay: [this.habitDetail.lastDay],
       done: [this.habitDetail.done]
