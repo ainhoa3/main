@@ -1,13 +1,13 @@
-import { Component, Inject, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { NgbModal, NgbModalRef, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { TaskService } from '../../services/task.service';
 import { HabitService } from '../../services/habit.service';
-import { TaskPreview, Environment } from '../../models/task.model';
-import { HabitPreview, Habit } from '../../models/habit.model';
+import { TaskPreview } from '../../models/task.model';
+import { HabitPreview, Environment, Habit } from '../../models/habit.model';
+import { FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { TaskDetailComponent } from '../tasks/task-detail/task-detail.component';
-import { HabitDetailComponent } from '../habits/habit-detail/habit-detail.component';
 import { SpinnerComponent } from '../shared/spinner/spinner.component';
 
 @Component({
@@ -16,13 +16,105 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
+    NgbModule,
     TaskDetailComponent,
-    HabitDetailComponent,
     SpinnerComponent
   ],
   template: `
     <div class="search-page">
       <h1>Búsqueda</h1>
+      
+      <!-- Detalle de Tarea -->
+      <app-task-detail 
+        *ngIf="showTaskDetail" 
+        [taskId]="selectedTaskId" 
+        (close)="closeTaskDetail()"
+        (taskUpdated)="search()">
+      </app-task-detail>
+
+      <!-- Modal de Detalle de Hábito -->
+      <ng-template #modalContent>
+        <div class="modal-backdrop" (click)="onBackdropClick($event)">
+          <div class="modal-content habit-detail">
+            <div class="modal-header">
+              <h2>{{ isEditing ? 'Editar Hábito' : 'Detalle de Hábito' }}</h2>
+              <button class="close-btn" (click)="closeHabitModal()">✕</button>
+            </div>
+            <div class="modal-body">
+              <div *ngIf="!isEditing && habitDetail" class="habit-view">
+                <h3 class="habit-title">{{ habitDetail.title }}</h3>
+                <div class="habit-meta">
+                  <span class="habit-environment">{{ getEnvironmentString(habitDetail.environment) }}</span>
+                  <span class="habit-date">Último día: {{ habitDetail.lastDay | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <p class="habit-description">{{ habitDetail.description }}</p>
+                <div class="habit-metrics">
+                  <div class="metric">
+                    <span class="label">Estado:</span>
+                    <span class="value status" [ngClass]="{ 
+                      'status-success': habitDetail.done,
+                      'status-pending': !habitDetail.done
+                    }">
+                      {{ habitDetail.done ? 'Completado' : 'Pendiente' }}
+                    </span>
+                  </div>
+                  <div class="metric">
+                    <span class="label">Frecuencia:</span>
+                    <span class="value">{{ habitDetail.programmDays }} días</span>
+                  </div>
+                </div>
+              </div>
+
+              <form *ngIf="isEditing && habitForm" [formGroup]="habitForm" class="edit-form">
+                <div class="form-group">
+                  <label for="title">Título</label>
+                  <input type="text" id="title" formControlName="title" class="form-control">
+                  <div *ngIf="habitForm && habitForm.get('title')?.invalid && habitForm.get('title')?.touched" class="error-message">
+                    El título es requerido
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="description">Descripción</label>
+                  <textarea id="description" formControlName="description" class="form-control" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                  <label for="environment">Entorno</label>
+                  <select id="environment" formControlName="environment" class="form-control">
+                    <option [value]="Environment.WORK">Trabajo</option>
+                    <option [value]="Environment.PERSONAL">Personal</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label for="programmDays">Frecuencia (días)</label>
+                  <input type="number" id="programmDays" formControlName="programmDays" class="form-control" min="1">
+                </div>
+                
+                <div class="form-group">
+                  <label for="lastDay">Último día</label>
+                  <input type="date" id="lastDay" formControlName="lastDay" class="form-control">
+                </div>
+                
+                <div class="form-group checkbox-group">
+                  <label class="checkbox">
+                    <input type="checkbox" formControlName="done">
+                    <span>Marcar como completado</span>
+                  </label>
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button *ngIf="!isEditing" class="btn btn-outline" (click)="startEditing()">Editar</button>
+              <button *ngIf="isEditing" class="btn btn-outline" (click)="cancelEdit()">Cancelar</button>
+              <button *ngIf="isEditing" class="btn btn-primary" (click)="saveHabit()" [disabled]="habitForm.invalid">Guardar</button>
+              <button *ngIf="!isEditing" class="btn btn-primary" (click)="closeHabitModal()">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      </ng-template>
       
       <div class="search-container">
         <input 
@@ -86,12 +178,7 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
           <button type="button" class="btn-close" (click)="closeHabitModal()" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <app-habit-detail 
-            *ngIf="selectedHabitId" 
-            [habitId]="selectedHabitId"
-            (habitUpdated)="onHabitUpdated()"
-            (habitDeleted)="onHabitDeleted()">
-          </app-habit-detail>
+              <!-- El contenido del hábito se muestra directamente aquí -->
         </div>
       </ng-template>
     </div>
@@ -236,21 +323,198 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
       font-size: 1.3rem;
     }
 
+    /* Estilos para el modal de hábitos */
+    :host ::ng-deep .habit-detail-modal .modal-content {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1050;
+    }
+
+    .modal-content.habit-detail {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #333;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #666;
+      padding: 0.5rem;
+    }
+
+    .close-btn:hover {
+      color: #333;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .habit-detail .modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .habit-detail .modal-body {
+      padding: 1.5rem;
+    }
+
+    .habit-detail .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #666;
+      padding: 0 10px;
+    }
+
+    .habit-detail .close-btn:hover {
+      color: #333;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      width: 100%;
+      position: relative;
+      border: none;
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #666;
+      padding: 5px;
+    }
+
+    .modal-body {
+      padding: 20px 0;
+    }
+
+    .modal-dialog {
+      max-width: 800px;
+      margin: 1.75rem auto;
+      min-height: calc(100% - 3.5rem);
+      display: flex;
+      align-items: center;
+    }
+    
+    .modal-content {
+      width: 100%;
+      border: none;
+      border-radius: 0.5rem;
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .modal.show {
+      display: block !important;
+      opacity: 1 !important;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-backdrop {
+      opacity: 0.5 !important;
+    }
+      border: none;
+      border-radius: 0.5rem;
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
     .modal-header {
       border-bottom: 1px solid #dee2e6;
-      padding: 1rem;
+      padding: 1rem 1.5rem;
+      background-color: #f8f9fa;
+      border-top-left-radius: 0.5rem;
+      border-top-right-radius: 0.5rem;
     }
     
     .modal-title {
       margin: 0;
+      font-weight: 600;
+      color: #333;
     }
     
     .modal-body {
-      padding: 1rem;
+      padding: 1.5rem;
+      max-height: 70vh;
+      overflow-y: auto;
     }
     
     .btn-close {
       margin: -0.5rem -0.5rem -0.5rem auto;
+      padding: 0.5rem;
+      background-size: 1.25em;
+    }
+
+    .modal-backdrop {
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    /* Ensure modal is on top of other content */
+    .modal {
+      z-index: 1060;
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    
+    .modal-dialog {
+      max-width: 800px;
+      margin: 1.75rem auto;
+      position: relative;
+      width: auto;
     }
 
     @media (min-width: 768px) {
@@ -261,7 +525,22 @@ import { SpinnerComponent } from '../shared/spinner/spinner.component';
   `]
 })
 export class SearchComponent {
-  @ViewChild('habitModal') habitModalTemplate!: TemplateRef<any>;
+  @ViewChild('modalContent') habitModalContent!: TemplateRef<any>;
+  modalRef: NgbModalRef | null = null;
+  habitDetail: Habit | null = null;
+  isEditing = false;
+  habitForm!: FormGroup;
+  
+  // Hacer que Environment esté disponible en la plantilla
+  Environment = Environment;
+  
+  // Declarar controles del formulario para TypeScript
+  get titleControl() { return this.habitForm?.get('title') as FormControl; }
+  get descriptionControl() { return this.habitForm?.get('description') as FormControl; }
+  get environmentControl() { return this.habitForm?.get('environment') as FormControl; }
+  get programmDaysControl() { return this.habitForm?.get('programmDays') as FormControl; }
+  get lastDayControl() { return this.habitForm?.get('lastDay') as FormControl; }
+  get doneControl() { return this.habitForm?.get('done') as FormControl; }
   
   searchTerm: string = '';
   tasks: TaskPreview[] = [];
@@ -271,17 +550,17 @@ export class SearchComponent {
   selectedTaskId: number = 0;
   selectedHabitId: number | null = null;
   loading: boolean = false;
-  private habitModalRef: NgbModalRef | null = null;
   
   getEnvironmentString(environment: Environment): string {
     return environment === Environment.WORK ? 'Trabajo' : 'Personal';
   }
 
   constructor(
-    @Inject(TaskService) private taskService: TaskService, 
-    @Inject(HabitService) private habitService: HabitService,
-    private modalService: NgbModal
-  ) {}
+    private taskService: TaskService,
+    private habitService: HabitService,
+    private modalService: NgbModal,
+    private fb: FormBuilder
+  ) { }
 
   search(): void {
     if (this.searchTerm.trim()) {
@@ -335,27 +614,107 @@ export class SearchComponent {
   }
 
   openHabitDetail(habitId: number): void {
-    this.selectedHabitId = habitId;
-    this.habitModalRef = this.modalService.open(this.habitModalTemplate, { size: 'lg' });
+    this.habitService.getHabit(habitId).subscribe({
+      next: (habit: Habit) => {
+        this.habitDetail = habit;
+        this.isEditing = false;
+        this.modalRef = this.modalService.open(this.habitModalContent, {
+          size: 'lg',
+          backdrop: false,
+          keyboard: true,
+          windowClass: 'habit-detail-modal',
+          centered: true,
+          scrollable: true
+        });
+        this.modalRef.result.then(
+          () => {
+            // Se ejecuta cuando el modal se cierra con modalRef.close()
+            this.modalRef = null;
+          },
+          () => {
+            // Se ejecuta cuando el modal se descarta (con tecla ESC o haciendo clic fuera)
+            this.modalRef = null;
+          }
+        );
+      },
+      error: (error) => {
+        console.error('Error loading habit details:', error);
+      }
+    });
   }
 
   closeHabitModal(): void {
-    if (this.habitModalRef) {
-      this.habitModalRef.close();
-      this.habitModalRef = null;
-      this.selectedHabitId = null;
+    if (this.modalRef) {
+      this.modalRef.close();
+      this.modalRef = null;
+    }
+  }
+
+  onBackdropClick(event: MouseEvent): void {
+    if (this.modalRef && (event.target as HTMLElement).classList.contains('modal-backdrop')) {
+      this.modalRef.close();
+    }
+  }
+
+  startEditing(): void {
+    if (!this.habitDetail) {
+      console.error('No habit detail available for editing');
+      return;
+    }
+    
+    this.isEditing = true;
+    this.habitForm = this.fb.group({
+      title: [this.habitDetail.title, [Validators.required]],
+      description: [this.habitDetail.description],
+      environment: [this.habitDetail.environment],
+      programmDays: [this.habitDetail.programmDays, [Validators.min(1)]],
+      lastDay: [this.habitDetail.lastDay],
+      done: [this.habitDetail.done]
+    });
+  }
+
+  cancelEdit(): void {
+    this.isEditing = false;
+    this.habitForm.reset();
+  }
+
+  saveHabit(): void {
+    if (this.habitForm.valid) {
+      const updatedHabit: any = {
+        title: this.habitForm.get('title')?.value,
+        description: this.habitForm.get('description')?.value,
+        environment: this.habitForm.get('environment')?.value,
+        programmDays: this.habitForm.get('programmDays')?.value,
+        lastDay: this.habitForm.get('lastDay')?.value,
+        done: this.habitForm.get('done')?.value
+      };
+
+      if (this.habitDetail) {
+        this.habitService.updateHabit(this.habitDetail.id, updatedHabit).subscribe({
+          next: (updated) => {
+            this.isEditing = false;
+            this.habitForm.reset();
+            this.modalRef?.close();
+            this.search(); // Refresh the search results
+          },
+          error: (error) => {
+            console.error('Error updating habit:', error);
+          }
+        });
+      } else {
+        console.error('Habit detail is null');
+      }
     }
   }
 
   onHabitUpdated(): void {
-    // Refresh the habits list when a habit is updated
+    // Refresh the search results when a habit is updated
     this.search();
-    this.closeHabitModal();
   }
 
   onHabitDeleted(): void {
-    // Refresh the habits list when a habit is deleted
-    this.search();
+    // Close the modal and refresh the search results when a habit is deleted
     this.closeHabitModal();
+    this.search();
   }
 }
