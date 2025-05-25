@@ -1,0 +1,18 @@
+<header class="header">
+  <div class="header-content">
+    <div class="header-left">
+      <button class="toggle-sidebar-btn" (click)="toggleSidebarClick()">
+        <i class="fas fa-bars"></i>
+      </button>
+      <h1 class="page-title">{{ pageName }}</h1>
+    </div>
+    <div class="header-right">
+      <div class="user-info">
+        <span class="user-name hide-mobile">{{ userName }}</span>
+        <button class="user-avatar">
+          <i class="fas fa-user"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>

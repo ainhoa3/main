@@ -1,0 +1,53 @@
+<div class="dashboard-container">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-tasks"></i>
+      </div>
+      <div class="stat-content">
+        <h3>Tareas hoy</h3>
+        <p class="stat-number">{{ todayTasksCount }}</p>
+        <button class="action-btn" routerLink="/tasks" (click)="navigateToTasks()">
+          Ver tareas
+        </button>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-heart"></i>
+      </div>
+      <div class="stat-content">
+        <h3>Hábitos hoy</h3>
+        <p class="stat-number">{{ todayHabitsCount }}</p>
+        <button class="action-btn" routerLink="/habits" (click)="navigateToHabits()">
+          Ver hábitos
+        </button>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-plus-circle"></i>
+      </div>
+      <div class="stat-content">
+        <h3>Crear tarea</h3>
+        <button class="action-btn" (click)="navigateToCreateTask()">
+          Nueva tarea
+        </button>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-plus-circle"></i>
+      </div>
+      <div class="stat-content">
+        <h3>Crear hábito</h3>
+        <button class="action-btn" (click)="navigateToCreateHabit()">
+          Nuevo hábito
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

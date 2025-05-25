@@ -1,0 +1,47 @@
+<div class="sidebar" [class.collapsed]="collapsed" [class.mobile]="isMobile">
+  <div class="sidebar-header">
+    <div class="logo">
+      <img src="assets/images/logo.svg" alt="DailyFlow Logo" class="logo-image">
+      <span class="logo-text hide-mobile">DailyFlow</span>
+    </div>
+    <button class="toggle-btn" (click)="toggleSidebar()" *ngIf="!isMobile">
+      <i class="fas fa-bars"></i>
+    </button>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-home"></i>
+      <span class="nav-text hide-mobile">Dashboard</span>
+    </a>
+    <a routerLink="/habits" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-tasks"></i>
+      <span class="nav-text hide-mobile">Hábitos</span>
+    </a>
+    <a routerLink="/tasks" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-check-square"></i>
+      <span class="nav-text hide-mobile">Tareas</span>
+    </a>
+    <a routerLink="/goals" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-bullseye"></i>
+      <span class="nav-text hide-mobile">Objetivos</span>
+    </a>
+    <a routerLink="/calendar" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-calendar-alt"></i>
+      <span class="nav-text hide-mobile">Calendario</span>
+    </a>
+    <a routerLink="/search" routerLinkActive="active" class="nav-item">
+      <i class="fas fa-search"></i>
+      <span class="nav-text hide-mobile">Buscar</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button class="logout-btn" (click)="logout()">
+      <i class="fas fa-sign-out-alt"></i>
+      <span class="nav-text hide-mobile">Cerrar sesión</span>
+    </button>
+  </div>
+</div>
+
+<div class="mobile-overlay" *ngIf="showMobileMenu" (click)="closeMobileMenu()"></div>

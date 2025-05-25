@@ -1,0 +1,12 @@
+<app-header [pageName]="pageName" (toggleSidebar)="toggleSidebar()"></app-header>
+
+  <div class="app-container">
+    <main class="main-content" [class.sidebar-opened]="!sidebarCollapsed && !isMobile || showMobileMenu">
+      <router-outlet></router-outlet>
+    </main>
+
+    <app-sidebar [collapsed]="sidebarCollapsed" [isMobile]="isMobile" [showMobileMenu]="showMobileMenu" 
+        (toggleCollapse)="sidebarCollapsed = $event" 
+        (mobileMenuClosed)="showMobileMenu = false">
+    </app-sidebar>
+  </div>

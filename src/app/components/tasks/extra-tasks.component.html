@@ -1,0 +1,35 @@
+<div class="extra-tasks-container">
+  <div class="header">
+    <h2>Tareas adicionales</h2>
+    <div class="filters">
+      <button class="filter-btn" (click)="filterBy('all')" [class.active]="currentFilter === 'all'">
+        <i class="fas fa-filter"></i>
+        Todas
+      </button>
+      <button class="filter-btn" (click)="filterBy('priority')" [class.active]="currentFilter === 'priority'">
+        <i class="fas fa-star"></i>
+        Prioridad
+      </button>
+      <button class="filter-btn" (click)="filterBy('category')" [class.active]="currentFilter === 'category'">
+        <i class="fas fa-tags"></i>
+        Categoría
+      </button>
+    </div>
+  </div>
+
+  <div class="tasks-list">
+    <div *ngFor="let task of filteredTasks" class="task-item" 
+         [class.high-priority]="task.priority === 'high'"
+         [class.medium-priority]="task.priority === 'medium'"
+         [class.low-priority]="task.priority === 'low'">
+      <div class="task-content">
+        <span class="priority-indicator"></span>
+        <span>{{ task.title }}</span>
+        <span class="category-tag">{{ task.category }}</span>
+      </div>
+      <button class="delete-btn" (click)="deleteTask(task)">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  </div>
+</div>

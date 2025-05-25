@@ -1,0 +1,32 @@
+<div class="today-tasks-container">
+  <div class="header">
+    <h2>Tareas del día</h2>
+    <div class="filters">
+      <button class="filter-btn" (click)="filterBy('all')" [class.active]="currentFilter === 'all'">
+        <i class="fas fa-filter"></i>
+        Todas
+      </button>
+      <button class="filter-btn" (click)="filterBy('completed')" [class.active]="currentFilter === 'completed'">
+        <i class="fas fa-check-circle"></i>
+        Completadas
+      </button>
+      <button class="filter-btn" (click)="filterBy('pending')" [class.active]="currentFilter === 'pending'">
+        <i class="fas fa-clock"></i>
+        Pendientes
+      </button>
+    </div>
+  </div>
+
+  <div class="tasks-list">
+    <div *ngFor="let task of filteredTasks" class="task-item" 
+         [class.completed]="task.completed">
+      <div class="task-content">
+        <input type="checkbox" [(ngModel)]="task.completed" (change)="toggleTask(task)" />
+        <span>{{ task.title }}</span>
+      </div>
+      <button class="delete-btn" (click)="deleteTask(task)">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  </div>
+</div>

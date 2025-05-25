@@ -1,6 +1,5 @@
-import { Component, OnInit, ViewChild, Inject, ElementRef } from '@angular/core';
-import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
-import { TemplateRef } from '@angular/core';
+import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
+import { NgbModal, NgbModalRef, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PageTitleService } from '../../services/page-title.service';
@@ -21,10 +20,10 @@ interface HabitFilter {
 @Component({
   selector: 'app-habits',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbModule, SpinnerComponent, HeaderComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbModule, SpinnerComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './habits.component.html',
-  styleUrls: ['./habits.component.css']
+  styleUrls: ['./habits.component.css', './modal-styles.css']
 })
 export class HabitsComponent implements OnInit {
   @ViewChild('editModal') editModal!: TemplateRef<any>;
@@ -37,11 +36,25 @@ export class HabitsComponent implements OnInit {
   currentFilter: string | null = null;
   selectedHabitId: number | null = null;
   habitDetail!: Habit;
-  modalRef!: NgbModalRef;
+  private _modalRef: NgbModalRef | null = null;
+  
+  get modalRef(): NgbModalRef | null {
+    return this._modalRef;
+  }
+  
+  set modalRef(ref: NgbModalRef | null) {
+    this._modalRef = ref;
+  }
   isEditing = false;
   habitForm!: FormGroup;
   loading = false;
 
+  closeModal(): void {
+    if (this._modalRef) {
+      this._modalRef.close();
+      this._modalRef = null;
+    }
+  }
 
 
   constructor(
@@ -147,9 +160,56 @@ export class HabitsComponent implements OnInit {
   }
 
   onBackdropClick(event: MouseEvent): void {
-    if ((event.target as HTMLElement).classList.contains('modal-backdrop')) {
+    if (this.modalRef && (event.target as HTMLElement).classList.contains('modal-backdrop')) {
       this.modalRef.close();
+      this.modalRef = null;
     }
+  }
+
+  closeHabitModal(): void {
+    this.isEditing = false;
+    this.habitDetail = null as any; // Reset the habit detail
+    this.habitForm.reset(); // Reset the form
+    this.closeModal();
+  }
+
+  openEditModal(habit: Habit): void {
+    this.habitDetail = habit;
+    this.isEditing = true;
+    
+    // Initialize the form with the habit data
+    this.habitForm = this.formBuilder.group({
+      title: [habit.title, [Validators.required]],
+      description: [habit.description],
+      environment: [habit._Environment === 'work' ? 1 : 0, [Validators.required]],
+      programmDays: [habit.programmDays, [Validators.required, Validators.min(1)]],
+      lastDay: [new Date(habit.lastDay).toISOString().split('T')[0], [Validators.required]],
+      done: [habit.done || false]
+    });
+
+    this.modalRef = this.modalService.open(this.editModal, {
+      size: 'lg',
+      backdrop: true,
+      keyboard: true,
+      windowClass: 'habit-detail-modal',
+      centered: true,
+      scrollable: true
+    });
+  }
+
+  cancelEdit(): void {
+    if (this.habitDetail) {
+      // Reset the form with the original habit data
+      this.habitForm.patchValue({
+        title: this.habitDetail.title,
+        description: this.habitDetail.description,
+        environment: this.habitDetail._Environment === 'work' ? 1 : 0,
+        programmDays: this.habitDetail.programmDays,
+        lastDay: new Date(this.habitDetail.lastDay).toISOString().split('T')[0],
+        done: this.habitDetail.done || false
+      });
+    }
+    this.isEditing = false;
   }
 
   startEditing(): void {
@@ -159,33 +219,31 @@ export class HabitsComponent implements OnInit {
     this.habitForm = this.formBuilder.group({
       title: [this.habitDetail.title, [Validators.required]],
       description: [this.habitDetail.description],
-      environment: [this.habitDetail._Environment],
-      programmDays: [this.habitDetail.programmDays, [Validators.min(1)]],
-      lastDay: [this.habitDetail.lastDay],
-      done: [this.habitDetail.done]
+      environment: [this.habitDetail._Environment === 'work' ? 1 : 0, [Validators.required]],
+      programmDays: [this.habitDetail.programmDays, [Validators.required, Validators.min(1)]],
+      lastDay: [new Date(this.habitDetail.lastDay).toISOString().split('T')[0], [Validators.required]],
+      done: [this.habitDetail.done || false]
     });
-
-    this.modalRef = this.modalService.open(this.editModal, {
-      size: 'lg',
-      backdrop: false,
-      keyboard: true,
-      windowClass: 'habit-detail-modal',
-      centered: true,
-      scrollable: true
-    });
-  }
-
-  cancelEdit(): void {
-    this.modalRef.close();
-    this.isEditing = false;
   }
 
   openHabitDetail(habitId: number): void {
+    this.selectedHabitId = habitId;
+    this.loading = true;
     this.habitService.getHabit(habitId).subscribe({
       next: (habit: Habit) => {
         this.habitDetail = habit;
         this.isEditing = false;
-        this.modalRef = this.modalService.open(this.detailModal, {
+        // Initialize the form with the habit data
+        this.habitForm = this.formBuilder.group({
+          title: [habit.title, [Validators.required]],
+          description: [habit.description],
+          environment: [habit._Environment === 'work' ? 1 : 0, [Validators.required]],
+          programmDays: [habit.programmDays, [Validators.required, Validators.min(1)]],
+          lastDay: [new Date(habit.lastDay).toISOString().split('T')[0], [Validators.required]],
+          done: [habit.done || false]
+        });
+        this.loading = false;
+        const modalRef = this.modalService.open(this.detailModal, {
           size: 'lg',
           backdrop: false,
           keyboard: true,
@@ -193,35 +251,64 @@ export class HabitsComponent implements OnInit {
           centered: true,
           scrollable: true
         });
+        this.modalRef = modalRef;
+        
+        modalRef.result.then(
+          () => {
+            // Se ejecuta cuando el modal se cierra con modalRef.close()
+            this.modalRef = null;
+          },
+          () => {
+            // Se ejecuta cuando el modal se descarta (con tecla ESC o haciendo clic fuera)
+            this.modalRef = null;
+          }
+        );
       },
       error: (error: any) => {
-        console.error('Error loading habit details:', error);
+        console.error('Error loading habit detail:', error);
       }
     });
   }
 
   saveHabit(): void {
-    if (this.habitForm.valid) {
+    if (this.habitForm.valid && this.habitDetail) {
+      const formValue = this.habitForm.value;
       const habitData: HabitUpdatingDTO = {
-        title: this.habitForm.get('title')?.value,
-        description: this.habitForm.get('description')?.value,
-        environment: this.habitForm.get('environment')?.value,
-        programmDays: this.habitForm.get('programmDays')?.value,
-        lastDay: this.habitForm.get('lastDay')?.value,
-        done: this.habitForm.get('done')?.value
+        title: formValue.title,
+        description: formValue.description || '',
+        environment: formValue.environment, // This should be a number (0 or 1)
+        programmDays: formValue.programmDays,
+        lastDay: formValue.lastDay,
+        done: formValue.done || false
       };
+
+      this.loading = true;
       this.habitService.updateHabit(this.habitDetail.id, habitData).subscribe({
         next: (updated: Habit) => {
-          const index = this.habits.findIndex(h => h.id === this.habitDetail.id);
-          if (index !== -1) {
-            this.habits[index] = updated;
-            this.modalRef.close();
-            this.isEditing = false;
-            this.habitForm.reset();
+          // Update the habit in the list
+          const habitIndex = this.habits.findIndex(h => h.id === this.habitDetail?.id);
+          if (habitIndex !== -1) {
+            this.habits[habitIndex] = {
+              ...this.habits[habitIndex],
+              title: updated.title,
+              _Environment: updated._Environment,
+              done: updated.done,
+              programmDays: updated.programmDays,
+              lastDay: updated.lastDay
+            };
           }
+          
+          // Update the displayed habit detail
+          this.habitDetail = updated;
+          this.isEditing = false;
+          this.loading = false;
+          
+          // Refresh the habits list
+          this.loadHabits();
         },
         error: (error: any) => {
           console.error('Error updating habit:', error);
+          this.loading = false;
         }
       });
     }
