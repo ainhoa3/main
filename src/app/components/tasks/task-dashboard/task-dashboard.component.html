@@ -1,0 +1,58 @@
+<div class="dashboard-container">
+  <div class="welcome-section">
+    <h1>Bienvenido a DailyFlow</h1>
+    <p>Tu aplicación para gestionar tareas y mantenerte organizado. ¡Comienza a ser más productivo hoy mismo!</p>
+    
+    <div class="action-buttons">
+      <button (click)="navigateToCreateTask()" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Nueva Tarea
+      </button>
+      <button (click)="navigateToTasks()" class="btn btn-outline">
+        <i class="fas fa-tasks"></i> Ver todas las tareas
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-tasks"></i>
+      </div>
+      <div class="stat-content">
+        <h3>Tareas hoy</h3>
+        <p class="stat-number">{{ loading ? '...' : todayTasksCount }}</p>
+        <button class="action-btn" (click)="navigateToTasks()">
+          Ver tareas
+        </button>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-heart"></i>
+      </div>
+      <div class="stat-content">
+        <h3>Hábitos hoy</h3>
+        <p class="stat-number">{{ todayHabitsCount }}</p>
+        <button class="action-btn" (click)="navigateToHabits()">
+          Ver hábitos
+        </button>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-plus-circle"></i>
+      </div>
+      <div class="stat-content">
+        <h3>Acciones rápidas</h3>
+        <p>Gestiona tus tareas y hábitos</p>
+        <div class="quick-actions">
+          <button class="action-btn" (click)="navigateToCreateTask()">
+            <i class="fas fa-plus"></i> Nueva tarea
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

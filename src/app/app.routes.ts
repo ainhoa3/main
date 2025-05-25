@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { LandingPageComponent } from './components/landing-page/landing-page.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
+import { TaskComponent } from './components/tasks/task.component';
 import { CreateTaskComponent } from './components/tasks/create-task/create-task.component';
 import { CreateHabitComponent } from './components/habits/create-habit/create-habit.component';
 import { CalendarComponent } from './components/calendar/calendar.component';
@@ -17,7 +18,7 @@ export const routes: Routes = [
   },
   { 
     path: 'tasks',
-    component: DashboardComponent,
+    component: TaskComponent,
     canActivate: [AuthGuard]
   },
   { 

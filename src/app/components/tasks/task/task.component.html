@@ -1,0 +1,85 @@
+<div class="task-container">
+  <!-- Encabezado -->
+  <div class="task-header">
+    <h1>Mis Tareas</h1>
+    <button routerLink="/dashboard" class="btn btn-outline">
+      Volver al Dashboard
+    </button>
+  </div>
+
+  <!-- Pestañas -->
+  <div class="tabs">
+    <button 
+      [class.active]="activeTab === 'today'" 
+      (click)="setActiveTab('today')"
+      class="tab-btn"
+    >
+      Hoy
+    </button>
+    <button 
+      [class.active]="activeTab === 'extra'" 
+      (click)="setActiveTab('extra')"
+      class="tab-btn"
+    >
+      Tareas Extra
+    </button>
+  </div>
+
+  <!-- Formulario para agregar tarea -->
+  <div class="add-task-form">
+    <input 
+      type="text" 
+      [(ngModel)]="newTaskTitle" 
+      (keyup.enter)="addTask()"
+      placeholder="Escribe una nueva tarea..."
+      class="task-input"
+    >
+    <button (click)="addTask()" class="btn btn-primary">
+      Agregar
+    </button>
+  </div>
+
+  <!-- Mensaje de carga -->
+  <div *ngIf="loading" class="loading">
+    <p>Cargando tareas...</p>
+  </div>
+
+  <!-- Mensaje de error -->
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <!-- Lista de tareas -->
+  <div class="task-list" *ngIf="!loading">
+    <div 
+      *ngFor="let task of activeTab === 'today' ? todayTasks : extraTasks"
+      class="task-item"
+      [class.completed]="task.done"
+    >
+      <div class="task-content">
+        <input 
+          type="checkbox" 
+          [checked]="task.done" 
+          (change)="toggleTaskDone(task)"
+          class="task-checkbox"
+        >
+        <span class="task-title">{{ task.title }}</span>
+      </div>
+      <button 
+        (click)="deleteTask(task.id, activeTab)" 
+        class="delete-btn"
+        title="Eliminar tarea"
+      >
+        🗑️
+      </button>
+    </div>
+
+    <!-- Mensaje cuando no hay tareas -->
+    <div 
+      *ngIf="(activeTab === 'today' ? todayTasks : extraTasks).length === 0" 
+      class="no-tasks"
+    >
+      <p>No hay tareas {{ activeTab === 'today' ? 'para hoy' : 'extra' }}. ¡Añade una nueva!</p>
+    </div>
+  </div>
+</div>

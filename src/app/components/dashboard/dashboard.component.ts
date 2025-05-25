@@ -1,35 +1,36 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TodayTasksComponent } from '../tasks/today-tasks/today-tasks.component';
-import { ExtraTasksComponent } from '../tasks/extra-tasks/extra-tasks.component';
 import { Router } from '@angular/router';
+import { TaskService } from '../../services/task.service';
+import { HabitService } from '../../services/habit.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [
-    CommonModule,
-    TodayTasksComponent,
-    ExtraTasksComponent
+    CommonModule
   ],
   template: `
     <div class="dashboard-container">
       <div class="dashboard-content">
         <div class="welcome-section">
           <h1>¡Bienvenido a tu día!</h1>
-          <p>Aquí puedes ver un resumen de tus tareas y acciones rápidas.</p>
+          <p>¡Hola! Aquí tienes un resumen rápido de tu día.</p>
+          
+          <div class="quick-stats">
+            <div class="stats-item">
+              <p>Tienes {{todayTasksCount}} tareas hoy</p>
+              <button class="btn btn-primary" (click)="goToTasks()">Ver tareas</button>
+            </div>
+            <div class="stats-item">
+              <p>Tienes {{todayHabitsCount}} hábitos hoy</p>
+              <button class="btn btn-outline" (click)="goToHabits()">Ver hábitos</button>
+            </div>
+          </div>
+
           <div class="action-buttons">
-            <button class="btn btn-primary" (click)="createTask()">Nueva Tarea</button>
-            <button class="btn btn-outline" (click)="createHabit()">Nuevo Hábito</button>
-          </div>
-        </div>
-        
-        <div class="tasks-container">
-          <div class="today-tasks">
-            <app-today-tasks></app-today-tasks>
-          </div>
-          <div class="extra-tasks">
-            <app-extra-tasks></app-extra-tasks>
+            <button class="btn btn-primary" (click)="createTask()">Crear tarea</button>
+            <button class="btn btn-outline" (click)="createHabit()">Crear hábito</button>
           </div>
         </div>
       </div>
@@ -62,23 +63,23 @@ import { Router } from '@angular/router';
       margin-bottom: 1.5rem;
     }
 
-    .action-buttons {
-      display: flex;
-      gap: 1rem;
-    }
-
-    .tasks-container {
+    .quick-stats {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 2rem;
+      margin-bottom: 2rem;
     }
 
-    .today-tasks, .extra-tasks {
+    .stats-item {
       background-color: white;
+      padding: 1.5rem;
       border-radius: var(--border-radius-md);
-      box-shadow: var(--shadow-md);
-      overflow: hidden;
-      min-height: 400px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
     }
 
     @media (max-width: 768px) {
@@ -87,7 +88,7 @@ import { Router } from '@angular/router';
         padding: 1rem;
       }
 
-      .tasks-container {
+      .quick-stats {
         grid-template-columns: 1fr;
       }
 
@@ -99,14 +100,44 @@ import { Router } from '@angular/router';
   `]
 })
 export class DashboardComponent {
+  todayTasksCount = 0;
+  todayHabitsCount = 0;
   
-  constructor(private router: Router) {}
-  
+  constructor(private router: Router, private taskService: TaskService, private habitService: HabitService) {}
+
+  ngOnInit(): void {
+    this.loadTodayStats();
+  }
+
+  private async loadTodayStats(): Promise<void> {
+    try {
+      // Cargar el número de tareas del día
+      const todayTasks = await this.taskService.getTasksOfTheDayPreview().toPromise();
+      this.todayTasksCount = todayTasks ? todayTasks.length : 0;
+
+      // Cargar el número de hábitos del día
+      const todayHabits = await this.habitService.getHabitsOfTheDayPreview().toPromise();
+      this.todayHabitsCount = todayHabits ? todayHabits.length : 0;
+    } catch (error) {
+      console.error('Error loading today stats:', error);
+      this.todayTasksCount = 0;
+      this.todayHabitsCount = 0;
+    }
+  }
+
   createTask(): void {
     this.router.navigate(['/create-task']);
   }
 
   createHabit(): void {
     this.router.navigate(['/create-habit']);
+  }
+
+  goToTasks(): void {
+    this.router.navigate(['/tasks']);
+  }
+
+  goToHabits(): void {
+    this.router.navigate(['/habits']);
   }
 }
