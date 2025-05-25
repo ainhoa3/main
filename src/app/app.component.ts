@@ -1,9 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { AuthService } from './services/auth.service';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
+import { AuthService } from './services/auth.service';
 import { HeaderComponent } from './components/header/header.component';
 import { PageTitleService } from './services/page-title.service';
 
@@ -13,8 +13,19 @@ import { PageTitleService } from './services/page-title.service';
   imports: [CommonModule, RouterOutlet, SidebarComponent, HeaderComponent],
   template: `
     <div class="app-container">
-      <app-sidebar *ngIf="isLoggedIn && !isLandingPage"></app-sidebar>
-      <div class="main-content" [ngClass]="{'with-sidebar': isLoggedIn && !isLandingPage}">
+      <app-sidebar 
+        *ngIf="isLoggedIn && !isLandingPage"
+        (toggleCollapse)="onSidebarToggle($event)"
+        [collapsed]="isSidebarCollapsed"
+      ></app-sidebar>
+      <div 
+        class="main-content" 
+        [ngClass]="{
+          'with-sidebar': isLoggedIn && !isLandingPage,
+          'sidebar-collapsed': isLoggedIn && !isLandingPage && isSidebarCollapsed,
+          'sidebar-expanded': isLoggedIn && !isLandingPage && !isSidebarCollapsed
+        }"
+      >
         <app-header *ngIf="isLoggedIn && !isLandingPage" [pageName]="currentPageName"></app-header>
         <div class="content-wrapper">
           <router-outlet></router-outlet>
@@ -33,10 +44,17 @@ import { PageTitleService } from './services/page-title.service';
       display: flex;
       flex-direction: column;
       background-color: var(--background-color);
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .main-content.with-sidebar {
-      margin-left: 250px;
+    /* Expanded state (default) */
+    .main-content.with-sidebar.sidebar-expanded {
+      margin-left: 260px;
+    }
+
+    /* Collapsed state */
+    .main-content.with-sidebar.sidebar-collapsed {
+      margin-left: 80px;
     }
 
     .content-wrapper {
@@ -45,21 +63,27 @@ import { PageTitleService } from './services/page-title.service';
       padding-top: 1rem;
       overflow-y: auto;
       height: calc(100vh - 70px);
+      transition: all 0.3s ease;
     }
 
     @media (max-width: 768px) {
-      .main-content.with-sidebar {
-        margin-left: 60px;
+      .main-content.with-sidebar.sidebar-expanded,
+      .main-content.with-sidebar.sidebar-collapsed {
+        margin-left: 0;
+      }
+
+      .main-content.with-sidebar.sidebar-expanded {
+        margin-left: 0;
       }
 
       .content-wrapper {
         padding: 1rem;
-        padding-top: 1rem;
       }
     }
   `]
 })
 export class App {
+  isSidebarCollapsed = false;
   isLoggedIn = false;
   isLandingPage = true;
 
@@ -78,6 +102,10 @@ export class App {
 
   private checkAuthStatus(): void {
     this.isLoggedIn = this.authService.isAuthenticated();
+  }
+
+  onSidebarToggle(isCollapsed: boolean) {
+    this.isSidebarCollapsed = isCollapsed;
   }
 
   private listenToRouteChanges(): void {
