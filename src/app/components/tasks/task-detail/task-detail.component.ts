@@ -20,31 +20,14 @@ import { Task, WORK_ENVIRONMENT, PERSONAL_ENVIRONMENT, getEnvironmentString, Tas
             <h3 class="task-title">{{ task.title }}</h3>
             <div class="task-meta">
               <span class="task-environment">{{ getEnvironmentStringFromNumber(task.environment) }}</span>
+              <span class="task-status tag" [class.status-completed]="task.done" [class.status-pending]="!task.done && !isTaskLate(task)" [class.status-late]="isTaskLate(task)">
+                {{ getTaskStatus(task) }}
+              </span>
+              <span class="task-importance tag">Importancia: {{ task.importance }}/5</span>
               <span class="task-date">Fecha: {{ task.dueDate | date:'dd/MM/yyyy' }}</span>
-            </div> 
-            <p class="task-description">{{ task.description }}</p>
-            <div class="task-metrics">
-              <div class="metric">
-                <span class="label">Importancia:</span>
-                <span class="value">{{ task.importance }}/5</span>
-              </div>
-              <div class="metric">
-                <span class="label">Prioridad:</span>
-                <span class="value">{{ task.priority }}%</span>
-              </div>
-              <div class="metric">
-                <span class="label">Estado:</span>
-                <span class="value status" [ngClass]="{ 
-                  'status-success': task.done,
-                  'status-error': !task.done && this.isTaskLate(task),
-                  'status-pending': !task.done && !this.isTaskLate(task)
-                }">
-                  {{ this.getTaskStatus(task) }}
-                </span>
-              </div>
             </div>
+            <p class="task-description">{{ task.description }}</p>
           </div>
-
           <form *ngIf="isEditing && taskForm" [formGroup]="taskForm" class="edit-form">
             <div class="form-group">
               <label for="title">Título</label>
@@ -94,10 +77,16 @@ import { Task, WORK_ENVIRONMENT, PERSONAL_ENVIRONMENT, getEnvironmentString, Tas
           </form>
         </div>
         <div class="modal-footer">
-          <button *ngIf="!isEditing" class="btn btn-outline" (click)="startEditing()">Editar</button>
+          <div class="btn-group">
+            <button *ngIf="!isEditing" class="btn btn-outline" (click)="startEditing()">Editar</button>
+            <button *ngIf="!isEditing" class="btn btn-danger" (click)="deleteTask()" title="Eliminar tarea">
+              <i class="fas fa-trash-alt"></i> Eliminar
+            </button>
+          </div>
           <button *ngIf="isEditing" class="btn btn-outline" (click)="cancelEdit()">Cancelar</button>
           <button *ngIf="isEditing" class="btn btn-primary" (click)="saveTask()" [disabled]="taskForm?.invalid">Guardar</button>
           <button *ngIf="!isEditing" class="btn btn-primary" (click)="close.emit()">Cerrar</button>
+          <span *ngIf="isDeleting">Eliminando...</span>
         </div>
       </div>
     </div>
@@ -234,6 +223,7 @@ export class TaskDetailComponent implements OnInit {
   taskForm: FormGroup | null = null;
   WORK_ENVIRONMENT = WORK_ENVIRONMENT;
   PERSONAL_ENVIRONMENT = PERSONAL_ENVIRONMENT;
+  isDeleting: boolean = false;
 
 
   constructor(
@@ -334,6 +324,25 @@ export class TaskDetailComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error updating task:', error);
+        }
+      });
+    }
+  }
+
+  deleteTask(): void {
+    if (confirm('¿Estás seguro de que quieres eliminar esta tarea?')) {
+      this.isDeleting = true;
+      this.taskService.deleteTask(this.taskId).subscribe({
+        next: () => {
+          this.close.emit();
+          this.taskUpdated.emit();
+        },
+        error: (error) => {
+          console.error('Error deleting task:', error);
+          alert('Error al eliminar la tarea. Por favor, inténtalo de nuevo.');
+        },
+        complete: () => {
+          this.isDeleting = false;
         }
       });
     }

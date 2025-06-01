@@ -1,0 +1,32 @@
+<div class="today-tasks-container">
+  <h2 class="section-title">Tareas de Hoy</h2>
+  <div class="tasks-filters">
+    <button class="btn btn-filter" (click)="filterEnvironment(WORK_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === WORK_ENVIRONMENT}">Trabajo</button>
+    <button class="btn btn-filter" (click)="filterEnvironment(PERSONAL_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === PERSONAL_ENVIRONMENT}">Personal</button>
+    <button class="btn btn-filter" (click)="clearFilter()" [ngClass]="{'selected': currentFilter === null}">Todos</button>
+  </div>
+
+  <div class="tasks-list">
+    <div class="task-item" *ngFor="let task of filteredTasks" (click)="openTaskDetail(task.id)">
+      <div class="task-info">
+        <h3 class="task-title">{{ task.title }}</h3>
+        <div class="task-meta">
+          <span class="environment">{{ getEnvironmentString(task.environment) }}</span>
+          <span class="importance">Importancia: {{ task.importance }}/5</span>
+        </div>
+      </div>
+      <div class="task-actions">
+        <div class="task-status">
+          <span class="status" [ngClass]="{'completed': task.done, 'pending': !task.done}">
+            {{ task.done ? 'Completada' : 'Pendiente' }}
+          </span>
+        </div>
+        <div class="task-checkbox">
+          <input type="checkbox" [checked]="task.done" (change)="markAsDone(task.id, !task.done)" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-spinner *ngIf="loading"></app-spinner>
+</div>

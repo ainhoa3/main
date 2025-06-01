@@ -1,0 +1,38 @@
+<div class="settings-container">
+  <h2>Ajustes de Usuario</h2>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Cargando información...</p>
+  </div>
+
+  <div *ngIf="!loading" class="user-info">
+    <div class="info-section">
+      <h3>Información Personal</h3>
+      <div class="info-item">
+        <span class="label">ID:</span>
+        <span class="value">{{ (user$ | async)?.id }}</span>
+      </div>
+      <div class="info-item">
+        <span class="label">Nombre de Usuario:</span>
+        <span class="value">{{ (user$ | async)?.username }}</span>
+      </div>
+      <div class="info-item">
+        <span class="label">Email:</span>
+        <span class="value">{{ (user$ | async)?.userEmail }}</span>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <h3>Preferencias</h3>
+      <div class="info-item">
+        <span class="label">Preferencia:</span>
+        <span class="value">{{ (user$ | async)?.preference }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading" class="error">
+    <p>No se pudo cargar la información del usuario</p>
+  </div>
+</div>

@@ -15,3 +15,11 @@ export interface AuthResponse {
   token: string;
   tokenExpiration: string;
 }
+
+export interface UserUpdatingDTO {
+  id: number;
+  preference?: string;
+  username?: string;
+  userEmail?: string;
+  streak?: number;
+}

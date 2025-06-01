@@ -7,6 +7,7 @@ import { CreateHabitComponent } from './components/habits/create-habit/create-ha
 import { CalendarComponent } from './components/calendar/calendar.component';
 import { SearchComponent } from './components/search/search.component';
 import { HabitsComponent } from './components/habits/habits.component';
+import { SettingsComponent } from './components/settings/settings.component';
 import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -14,6 +15,11 @@ export const routes: Routes = [
   { 
     path: 'dashboard', 
     component: DashboardComponent,
+    canActivate: [AuthGuard]
+  },
+  { 
+    path: 'settings', 
+    component: SettingsComponent,
     canActivate: [AuthGuard]
   },
   { 

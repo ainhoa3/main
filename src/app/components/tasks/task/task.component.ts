@@ -94,7 +94,7 @@ export class TaskComponent implements OnInit {
   }
 
 
-  deleteTask(taskId: string, taskType: 'today' | 'extra'): void {
+  deleteTask(taskId: number, taskType: 'today' | 'extra'): void {
     if (confirm('¿Estás seguro de que quieres eliminar esta tarea?')) {
       this.taskService.deleteTask(taskId).subscribe({
         next: () => {

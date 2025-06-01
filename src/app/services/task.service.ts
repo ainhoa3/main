@@ -80,4 +80,12 @@ export class TaskService {
       headers: { 'Authorization': `Bearer ${token}` }
     });
   }
+
+  // Delete a task
+  deleteTask(id: number): Observable<void> {
+    const token = this.authService.getToken();
+    return this.http.delete<void>(`${this.apiUrl}/DeleteTask/${id}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+  }
 }

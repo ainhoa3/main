@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { CookieService } from './cookie.service';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { UserUpdatingDTO } from '../models/user.model';
 import { CredencialesUserDTO, AuthResponse, User } from '../models/user.model';
 import { jwtDecode } from 'jwt-decode';
 
@@ -12,7 +13,7 @@ import { jwtDecode } from 'jwt-decode';
 export class AuthService {
   private apiUrl = 'http://localhost:5112/DailyFlow/api/users';
   private tokenKey = 'auth_token';
-  private currentUserSubject = new BehaviorSubject<User | null>(null);
+  private currentUserSubject = new BehaviorSubject<UserUpdatingDTO | null>(null);
   
   currentUser$ = this.currentUserSubject.asObservable();
   
@@ -20,12 +21,13 @@ export class AuthService {
     this.initializeUser();
   }
 
-  getCurrentUser(): User | null {
+  getCurrentUser(): UserUpdatingDTO | null {
     return this.currentUserSubject.value;
   }
 
   private initializeUser(): void {
     const token = this.getToken();
+    
     if (token) {
       try {
         const decodedToken: any = jwtDecode(token);
@@ -94,11 +96,49 @@ export class AuthService {
     });
   }
 
+  getCurrentUser$(): Observable<UserUpdatingDTO> {
+    const token = this.getToken();
+    if (!token) {
+      return new Observable<UserUpdatingDTO>((subscriber) => {
+        subscriber.error('No token available');
+      });
+    }
+    return this.http.get<UserUpdatingDTO>(`${this.apiUrl}/GetCurrentUser`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).pipe(
+      tap((user) => {
+        this.currentUserSubject.next(user);
+      })
+    );
+  }
+
   addStreak(): Observable<number> {
     const token = this.getToken();
     return this.http.get<number>(`${this.apiUrl}/AddStrike`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
+  }
+
+  deleteUser(): Observable<void> {
+    const token = this.getToken();
+    return this.http.delete<void>(`${this.apiUrl}/DeleteUser`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).pipe(
+      tap(() => {
+        this.logout();
+      })
+    );
+  }
+
+  updateUser(user: UserUpdatingDTO): Observable<void> {
+    const token = this.getToken();
+    return this.http.post<void>(`${this.apiUrl}/UpdateUser`, user, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).pipe(
+      tap(() => {
+        this.initializeUser();
+      })
+    );
   }
 
   saveToken(token: string, expirationDate?: string): void {

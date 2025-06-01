@@ -40,7 +40,13 @@ import { HabitService } from '../../../services/habit.service';
       </div>
     </div>
     <div class="modal-footer">
+      <div class="btn-group">
+        <button type="button" class="btn btn-danger" (click)="deleteHabit()" title="Eliminar hábito">
+          <i class="fas fa-trash-alt"></i> Eliminar
+        </button>
+      </div>
       <button type="button" class="btn btn-secondary" (click)="modalRef.close()">Cerrar</button>
+      <span *ngIf="isDeleting">Eliminando...</span>
     </div>
   `,
   styles: [`
@@ -81,40 +87,40 @@ import { HabitService } from '../../../services/habit.service';
   `]
 })
 export class HabitDetailComponent {
-  @Input() habitId: number | null = null;
-  @Input() modalRef!: NgbModalRef;
-  habit: Habit | null = null;
-  loading = true;
-
+  @Input() habit: Habit | null = null;
+  modalRef!: NgbModalRef;
+  isDeleting: boolean = false;
 
   constructor(
     @Inject(NgbModal) private modalService: NgbModal,
     private habitService: HabitService
   ) {}
 
-  ngOnInit() {
-    if (this.habitId) {
-      this.loadHabit();
+  open(habit: Habit): NgbModalRef {
+    const modalRef = this.modalService.open(HabitDetailComponent, { size: 'lg' });
+    modalRef.componentInstance.habit = habit;
+    return modalRef;
+  }
+
+  getEnvironmentString(environment: string | null): string {
+    return environment === 'work' ? 'Trabajo' : 'Personal';
+  }
+
+  deleteHabit(): void {
+    if (confirm('¿Estás seguro de que quieres eliminar este hábito?')) {
+      this.isDeleting = true;
+      this.habitService.deleteHabit(this.habit?.id ?? 0).subscribe({
+        next: () => {
+          this.modalRef.close();
+        },
+        error: (error) => {
+          console.error('Error deleting habit:', error);
+          alert('Error al eliminar el hábito. Por favor, inténtalo de nuevo.');
+        },
+        complete: () => {
+          this.isDeleting = false;
+        }
+      });
     }
-  }
-
-  private loadHabit() {
-    if (!this.habitId) return;
-    
-    this.loading = true;
-    this.habitService.getHabit(this.habitId).subscribe({
-      next: (habit) => {
-        this.habit = habit;
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading habit:', error);
-        this.loading = false;
-      }
-    });
-  }
-
-  getEnvironmentString(_Environment: string | null): string {
-    return _Environment === 'work' ? 'Trabajo' : 'Personal';
   }
 }

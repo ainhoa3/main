@@ -10,12 +10,12 @@ import { AuthService } from '../../services/auth.service';
     <header class="header">
       <div class="page-title">{{ pageName }}</div>
       <div class="user-info">
-        <div class="streak-container">
+        <div *ngIf="userStreak !== undefined" class="streak-container">
           <span class="streak-icon">🔥</span>
           <span class="streak-count">{{ userStreak }}</span>
         </div>
-        <div class="username">{{ username }}</div>
-        <div class="avatar">{{ usernameInitial }}</div>
+        <div *ngIf="username !== undefined" class="username">{{ username }}</div>
+        <div *ngIf="usernameInitial !== undefined" class="avatar">{{ usernameInitial }}</div>
       </div>
     </header>
   `,
@@ -95,27 +95,27 @@ import { AuthService } from '../../services/auth.service';
 })
 export class HeaderComponent implements OnInit {
   @Input() pageName: string = '';
-  username: string = '';
-  usernameInitial: string = '';
-  userStreak: number = 0;
+  username: string | undefined = undefined;
+  usernameInitial: string | undefined = undefined;
+  userStreak: number | undefined = undefined;
 
   constructor(private authService: AuthService) {
     // Initialize user info immediately
     const currentUser = this.authService.getCurrentUser();
-    if (currentUser) {
+    if (currentUser?.username) {
       this.username = currentUser.username;
       this.usernameInitial = currentUser.username.charAt(0).toUpperCase();
-      this.userStreak = currentUser.streak;
+      this.userStreak = currentUser.streak ?? 0;
     }
   }
 
   ngOnInit(): void {
     // Subscribe to changes
     this.authService.currentUser$.subscribe(user => {
-      if (user) {
+      if (user?.username) {
         this.username = user.username;
         this.usernameInitial = user.username.charAt(0).toUpperCase();
-        this.userStreak = user.streak;
+        this.userStreak = user.streak ?? 0;
       }
     });
   }

@@ -1,0 +1,24 @@
+<div class="extra-tasks-container">
+  <h2 class="section-title">Tareas Extra</h2>
+  <div class="tasks-list">
+    <div class="task-item" *ngFor="let task of tasks" (click)="openTaskDetail(task.id)">
+      <div class="task-info">
+        <h3 class="task-title">{{ task.title }}</h3>
+        <div class="task-meta">
+          <span class="environment">{{ getEnvironmentString(task.environment) }}</span>
+          <span class="importance">Importancia: {{ task.importance }}/5</span>
+        </div>
+      </div>
+      <div class="task-actions">
+        <div class="task-status">
+          <span class="status" [ngClass]="{'completed': task.done, 'pending': !task.done}">
+            {{ task.done ? 'Completada' : 'Pendiente' }}
+          </span>
+        </div>
+        <div class="task-checkbox">
+          <input type="checkbox" [checked]="task.done" (change)="markAsDone(task.id, !task.done)" />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
