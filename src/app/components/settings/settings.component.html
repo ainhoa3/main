@@ -1,38 +1,131 @@
 <div class="settings-container">
-  <h2>Ajustes de Usuario</h2>
+  <h2>Configuración</h2>
 
-  <div *ngIf="loading" class="loading">
+  <div *ngIf="loading && !currentUser" class="loading">
     <div class="spinner"></div>
-    <p>Cargando información...</p>
+    <p>Cargando configuración...</p>
   </div>
 
-  <div *ngIf="!loading" class="user-info">
-    <div class="info-section">
-      <h3>Información Personal</h3>
-      <div class="info-item">
-        <span class="label">ID:</span>
-        <span class="value">{{ (user$ | async)?.id }}</span>
-      </div>
-      <div class="info-item">
-        <span class="label">Nombre de Usuario:</span>
-        <span class="value">{{ (user$ | async)?.username }}</span>
-      </div>
-      <div class="info-item">
-        <span class="label">Email:</span>
-        <span class="value">{{ (user$ | async)?.userEmail }}</span>
-      </div>
-    </div>
-
-    <div class="info-section">
-      <h3>Preferencias</h3>
-      <div class="info-item">
-        <span class="label">Preferencia:</span>
-        <span class="value">{{ (user$ | async)?.preference }}</span>
-      </div>
-    </div>
+  <div *ngIf="error" class="error">
+    {{ error }}
   </div>
 
-  <div *ngIf="!loading" class="error">
-    <p>No se pudo cargar la información del usuario</p>
+  <div *ngIf="currentUser" class="user-info">
+    <div class="info-section">
+      <h3>Información de la cuenta</h3>
+      
+      <!-- Username -->
+      <div class="info-item">
+        <span class="label">Nombre de usuario</span>
+        <div class="value">
+          <ng-container *ngIf="editingField !== 'username'; else editUsername">
+            {{ currentUser.username }}
+            <button (click)="startEditing('username')" class="btn-edit">
+              Editar
+            </button>
+          </ng-container>
+          <ng-template #editUsername>
+            <form *ngIf="isEditingField('username')" [formGroup]="editForms.username" (ngSubmit)="saveField('username')" class="edit-form">
+              <input 
+                type="text" 
+                formControlName="username" 
+                class="form-control" 
+                [class.is-invalid]="editForms.username.get('username')?.invalid && editForms.username.get('username')?.touched"
+              >
+              <div *ngIf="editForms.username.get('username')?.errors?.['required'] && editForms.username.get('username')?.touched" 
+                   class="error-message">
+                El nombre de usuario es obligatorio
+              </div>
+              <div class="form-actions">
+                <button type="button" (click)="cancelEdit()" class="btn-cancel">Cancelar</button>
+                <button type="submit" class="btn-save" [disabled]="editForms.username.invalid">
+                  Guardar
+                </button>
+              </div>
+            </form>
+          </ng-template>
+        </div>
+      </div>
+
+      <!-- Email (userEmail) -->
+      <div class="info-item">
+        <span class="label">Correo electrónico</span>
+        <div class="value">
+          <ng-container *ngIf="editingField !== 'userEmail'; else editEmail">
+            {{ currentUser.userEmail || currentUser.email || 'No especificado' }}
+            <button (click)="startEditing('userEmail')" class="btn-edit">
+              Editar
+            </button>
+          </ng-container>
+          <ng-template #editEmail>
+            <form *ngIf="isEditingField('userEmail')" [formGroup]="editForms.userEmail" (ngSubmit)="saveField('userEmail')" class="edit-form">
+              <input 
+                type="email" 
+                formControlName="userEmail" 
+                class="form-control" 
+                [class.is-invalid]="editForms.userEmail.get('userEmail')?.invalid && editForms.userEmail.get('userEmail')?.touched"
+              >
+              <div *ngIf="editForms.userEmail.get('userEmail')?.errors?.['required'] && editForms.userEmail.get('userEmail')?.touched" 
+                   class="error-message">
+                El correo electrónico es obligatorio
+              </div>
+              <div *ngIf="editForms.userEmail.get('userEmail')?.errors?.['email'] && editForms.userEmail.get('userEmail')?.touched" 
+                   class="error-message">
+                Por favor, introduce un correo electrónico válido
+              </div>
+              <div class="form-actions">
+                <button type="button" (click)="cancelEdit()" class="btn-cancel">Cancelar</button>
+                <button type="submit" class="btn-save" [disabled]="editForms.userEmail.invalid">
+                  Guardar
+                </button>
+              </div>
+            </form>
+          </ng-template>
+        </div>
+      </div>
+
+      <!-- Preference Slider -->
+      <div class="info-item">
+        <span class="label">Preferencia de tareas</span>
+        <div class="value">
+          <ng-container *ngIf="editingField !== 'preference'; else editPreference">
+            {{ preference !== null ? getPreferenceLabel(preference) : 'No especificada' }}
+            <button (click)="startEditing('preference')" class="btn-edit">
+              Cambiar
+            </button>
+          </ng-container>
+          <ng-template #editPreference>
+            <form *ngIf="isEditingField('preference')" [formGroup]="editForms.preference" (ngSubmit)="saveField('preference')" class="preference-form">
+              <div class="slider-container">
+                <div class="slider-labels">
+                  <span [class.active]="editForms.preference.get('preference')?.value === 0">Importancia</span>
+                  <span [class.active]="editForms.preference.get('preference')?.value === 1">Balance</span>
+                  <span [class.active]="editForms.preference.get('preference')?.value === 2">Urgencia</span>
+                </div>
+                <input 
+                  type="range" 
+                  formControlName="preference"
+                  class="preference-slider"
+                  min="0"
+                  max="2"
+                  step="1"
+                >
+                <div class="slider-ticks">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="button" (click)="cancelEdit()" class="btn-cancel">Cancelar</button>
+                <button type="submit" class="btn-save" [disabled]="editForms.preference.invalid">
+                  Guardar
+                </button>
+              </div>
+            </form>
+          </ng-template>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

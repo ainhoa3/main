@@ -20,6 +20,6 @@ export interface UserUpdatingDTO {
   id: number;
   preference?: string;
   username?: string;
-  userEmail?: string;
+  email?: string;
   streak?: number;
 }
