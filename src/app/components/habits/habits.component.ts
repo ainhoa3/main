@@ -24,9 +24,7 @@ interface HabitFilter {
   styleUrls: ['./habits.component.css', './modal-styles.css']
 })
 export class HabitsComponent implements OnInit {
-  @ViewChild('editModal') editModal!: TemplateRef<any>;
-  @ViewChild('detailModal') detailModal!: TemplateRef<any>;
-  @ViewChild('deleteModal') deleteModal!: TemplateRef<any>;
+  @ViewChild('modalContent') habitModalContent!: TemplateRef<any>;
 
   habits: HabitPreview[] = [];
   allHabits: HabitPreview[] = [];
@@ -36,15 +34,7 @@ export class HabitsComponent implements OnInit {
   selectedHabitId: number | null = null;
   selectedHabit: Habit | null = null;
   habitDetail: Habit | null = null;
-  private _modalRef: NgbModalRef | null = null;
-  
-  get modalRef(): NgbModalRef | null {
-    return this._modalRef;
-  }
-  
-  set modalRef(ref: NgbModalRef | null) {
-    this._modalRef = ref;
-  }
+  modalRef: NgbModalRef | null = null;
 
   isEditing = false;
   habitForm!: FormGroup;
@@ -79,8 +69,7 @@ export class HabitsComponent implements OnInit {
   }
 
   onBackdropClick(event: MouseEvent): void {
-    const target = event.target as HTMLElement;
-    if (target.classList.contains('modal-backdrop')) {
+    if (this.modalRef && (event.target as HTMLElement).classList.contains('modal-backdrop')) {
       this.closeModal();
     }
   }
@@ -190,6 +179,8 @@ export class HabitsComponent implements OnInit {
   }
 
   deleteHabit(habitId: number): void {
+    if (!habitId) return;
+    
     if (confirm('¿Estás seguro de que deseas eliminar este hábito?')) {
       this.habitService.deleteHabit(habitId).subscribe({
         next: () => {
@@ -236,17 +227,15 @@ export class HabitsComponent implements OnInit {
   }
 
   openHabitDetail(habit: HabitPreview): void {
-    this.loading = true;
     this.habitService.getHabit(habit.id).subscribe({
       next: (habitDetail: Habit) => {
         this.habitDetail = habitDetail;
-        this.selectedHabit = habitDetail;
+        this.selectedHabit = { ...habitDetail };
         this.isEditing = false;
-        this.initializeForm();
         
-        this.modalRef = this.modalService.open(this.detailModal, {
+        this.modalRef = this.modalService.open(this.habitModalContent, {
           size: 'lg',
-          backdrop: true,
+          backdrop: false,
           keyboard: true,
           windowClass: 'habit-detail-modal',
           centered: true,
