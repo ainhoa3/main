@@ -1,6 +1,7 @@
 import { Component, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { NgbModal, NgbModalRef, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { TaskService } from '../../services/task.service';
 import { HabitService } from '../../services/habit.service';
@@ -67,6 +68,15 @@ import { OnInit } from '@angular/core';
                     <span class="label">Frecuencia:</span>
                     <span class="value">{{ habitDetail.programmDays }} días</span>
                   </div>
+                </div>
+                
+                <div class="habit-actions mt-4">
+                  <button type="button" class="btn btn-outline-danger" 
+                          (click)="deleteHabit(habitDetail.id)"
+                          [disabled]="isDeleting">
+                    <i class="fas fa-trash-alt me-2"></i>
+                    {{ isDeleting ? 'Eliminando...' : 'Eliminar Hábito' }}
+                  </button>
                 </div>
               </div>
 
@@ -793,6 +803,7 @@ export class SearchComponent implements OnInit {
   modalRef: NgbModalRef | null = null;
   habitDetail: Habit | null = null;
   isEditing = false;
+  isDeleting = false;
   habitForm!: FormGroup;
   
   // Hacer que Environment esté disponible en la plantilla
@@ -823,7 +834,8 @@ export class SearchComponent implements OnInit {
     private taskService: TaskService,
     private habitService: HabitService,
     private modalService: NgbModal,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private router: Router
   ) { }
 
   search(): void {
@@ -980,5 +992,22 @@ export class SearchComponent implements OnInit {
     // Close the modal and refresh the search results when a habit is deleted
     this.closeHabitModal();
     this.search();
+  }
+
+  async deleteHabit(habitId: number): Promise<void> {
+    if (confirm('¿Estás seguro de que deseas eliminar este hábito?')) {
+      this.isDeleting = true;
+      try {
+        await this.habitService.deleteHabit(habitId).toPromise();
+        this.modalRef?.close();
+        this.search(); // Actualizar los resultados de búsqueda
+        this.router.navigate(['/habits']); // Redirigir a la página de hábitos
+      } catch (error) {
+        console.error('Error al eliminar el hábito:', error);
+        alert('Ocurrió un error al eliminar el hábito. Por favor, inténtalo de nuevo.');
+      } finally {
+        this.isDeleting = false;
+      }
+    }
   }
 }

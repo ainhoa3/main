@@ -10,85 +10,240 @@ import { DeleteIconComponent } from '../../../shared/components/delete-icon/dele
   standalone: true,
   imports: [CommonModule, DeleteIconComponent],
   template: `
-    <div class="modal-header">
-      <h4 class="modal-title">{{ habit?.title }}</h4>
-      <button type="button" class="btn-close" aria-label="Close" (click)="modalRef.close()"></button>
-    </div>
-    <div class="modal-body">
-      <div class="habit-detail-content">
-        <div class="habit-description">
-          <h5>Descripción</h5>
-          <p>{{ habit?.description }}</p>
+    <div class="modal-backdrop" (click)="onBackdropClick($event)">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">{{ habit?.title }}</h2>
+          <button type="button" class="close-btn" (click)="close()" aria-label="Cerrar">×</button>
         </div>
-        <div class="habit-info">
-          <div class="habit-info-item">
-            <strong>Estado:</strong>
-            <span>{{ habit?.done ? 'Completado' : 'Pendiente' }}</span>
+        <div class="modal-body">
+          <div class="habit-view" *ngIf="habit">
+            <div class="habit-meta">
+              <span class="environment" [ngClass]="getEnvironmentClass(convertEnvironmentToNumber(habit._Environment))">
+                {{ getEnvironmentString(habit._Environment) }}
+              </span>
+              <span class="program-days">Días: {{ habit.programmDays }}</span>
+              <span class="last-day" *ngIf="habit.lastDay">Último día: {{ habit.lastDay | date:'dd/MM/yyyy' }}</span>
+            </div>
+            
+            <div class="habit-description" *ngIf="habit.description">
+              <h4>Descripción</h4>
+              <p>{{ habit.description }}</p>
+            </div>
+            
+            <div class="habit-status">
+              <span class="status" [ngClass]="{'completed': habit.done, 'pending': !habit.done}">
+                {{ habit.done ? 'Completado' : 'Pendiente' }}
+              </span>
+            </div>
           </div>
-          <div class="habit-info-item">
-            <strong>Frecuencia:</strong>
-            <span>{{ habit?.programmDays }} días</span>
-          </div>
-          <div class="habit-info-item">
-            <strong>Último día:</strong>
-            <span>{{ habit?.lastDay }}</span>
-          </div>
-          <div class="habit-info-item">
-            <strong>Entorno:</strong>
-            <span>{{ getEnvironmentString(habit?._Environment ?? null) }}</span>
-          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="close()">Cerrar</button>
+          <button type="button" class="btn btn-danger d-flex align-items-center gap-2" 
+                  (click)="deleteHabit()" 
+                  (mouseenter)="deleteHover = true" 
+                  (mouseleave)="deleteHover = false"
+                  [disabled]="isDeleting">
+            <app-delete-icon [size]="18" [isHovered]="deleteHover"></app-delete-icon>
+            <span>{{ isDeleting ? 'Eliminando...' : 'Eliminar' }}</span>
+          </button>
         </div>
       </div>
-    </div>
-    <div class="modal-footer">
-      <div class="btn-group">
-        <button type="button" class="btn btn-danger d-flex align-items-center gap-2" 
-                (click)="deleteHabit()" 
-                (mouseenter)="deleteHover = true" 
-                (mouseleave)="deleteHover = false" 
-                title="Eliminar hábito">
-          <app-delete-icon [size]="18" [isHovered]="deleteHover"></app-delete-icon>
-          <span>Eliminar</span>
-        </button>
-      </div>
-      <button type="button" class="btn btn-secondary" (click)="modalRef.close()">Cerrar</button>
-      <span *ngIf="isDeleting">Eliminando...</span>
     </div>
   `,
   styles: [`
-    .habit-detail-content {
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1050;
       padding: 1rem;
     }
 
-    .habit-description {
-      margin-bottom: 1.5rem;
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
     }
 
-    .habit-info {
-      display: grid;
-      gap: 1rem;
-    }
-
-    .habit-info-item {
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid #e9ecef;
       display: flex;
       justify-content: space-between;
-      padding: 0.5rem;
-      border-bottom: 1px solid #eee;
+      align-items: center;
     }
 
-    .habit-info-item:last-child {
-      border-bottom: none;
+    .modal-title {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #343a40;
     }
 
-    .habit-info-item strong {
-      color: #666;
-      width: 100px;
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1;
+      color: #6c757d;
+      cursor: pointer;
+      padding: 0.25rem;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .close-btn:hover {
+      opacity: 1;
+      color: #343a4f;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+
+    .habit-view {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .habit-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .environment, .program-days, .last-day {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .environment {
+      background-color: #e9ecef;
+      color: #495057;
+    }
+
+    .environment.work {
+      background-color: #e3f2fd;
+      color: #0d6efd;
+    }
+
+    .environment.personal {
+      background-color: #e8f5e9;
+      color: #198754;
+    }
+
+    .program-days, .last-day {
+      background-color: #f8f9fa;
+      color: #6c757d;
+    }
+
+    .habit-description {
+      margin-top: 1rem;
+    }
+
+    .habit-description h4 {
+      font-size: 1.1rem;
+      margin-bottom: 0.75rem;
+      color: #495057;
+    }
+
+    .habit-description p {
+      color: #6c757d;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .habit-status {
+      margin-top: 0.5rem;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+
+    .status.completed {
+      background-color: #e8f5e9;
+      color: #198754;
+    }
+
+    .status.pending {
+      background-color: #fff3cd;
+      color: #e6a700;
     }
 
     .modal-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid #e9ecef;
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
+      background-color: #f8f9fa;
+    }
+
+    .btn {
+      padding: 0.5rem 1.25rem;
+      border-radius: 20px;
+      font-weight: 500;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       gap: 0.5rem;
+      border: 1px solid transparent;
+    }
+
+    .btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border-color: #6c757d;
+      color: #6c757d;
+    }
+
+    .btn-outline:hover:not(:disabled) {
+      background-color: #f8f9fa;
+      border-color: #6c757d;
+      color: #495057;
+    }
+
+    .btn-danger {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background-color: #bb2d3b;
     }
   `]
 })
@@ -97,6 +252,26 @@ export class HabitDetailComponent {
   modalRef!: NgbModalRef;
   isDeleting: boolean = false;
   deleteHover: boolean = false;
+  
+  close() {
+    this.modalRef.close();
+  }
+  
+  onBackdropClick(event: MouseEvent) {
+    if (event.target === event.currentTarget) {
+      this.close();
+    }
+  }
+
+  convertEnvironmentToNumber(env: any): number {
+    if (typeof env === 'number') return env;
+    if (typeof env === 'string') return parseInt(env, 10);
+    return 0; // Valor por defecto
+  }
+
+  getEnvironmentClass(env: number): string {
+    return env === 0 ? 'work' : 'personal';
+  }
 
   constructor(
     @Inject(NgbModal) private modalService: NgbModal,
