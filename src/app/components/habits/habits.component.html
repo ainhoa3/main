@@ -31,7 +31,9 @@
       <div class="habit-card-header">
         <h3 class="habit-title">{{ habit.title }}</h3>
         <div class="habit-meta">
-          <span class="environment" [ngClass]="getEnvironmentClass(habit._Environment)">{{ getEnvironmentName(habit._Environment) }}</span>
+          <span class="environment" [ngClass]="getEnvironmentClass(convertEnvironmentToNumber(habit._Environment))">
+            {{ getEnvironmentName(convertEnvironmentToNumber(habit._Environment)) }}
+          </span>
           <span class="program-days">Días: {{ habit.programmDays }}</span>
         </div>
       </div>
@@ -66,8 +68,8 @@
           <div *ngIf="!isEditing && selectedHabit" class="habit-view">
             <h3 class="habit-title">{{ selectedHabit.title }}</h3>
             <div class="habit-meta">
-              <span class="environment" [ngClass]="getEnvironmentClass(selectedHabit._Environment)">
-                {{ getEnvironmentName(selectedHabit._Environment) }}
+              <span class="environment" [ngClass]="getEnvironmentClass(convertEnvironmentToNumber(selectedHabit._Environment))">
+                {{ getEnvironmentName(convertEnvironmentToNumber(selectedHabit._Environment)) }}
               </span>
               <span class="program-days">Días: {{ selectedHabit.programmDays }}</span>
               <span class="last-day" *ngIf="selectedHabit.lastDay">Último día: {{ selectedHabit.lastDay | date:'dd/MM/yyyy' }}</span>
