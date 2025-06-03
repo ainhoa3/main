@@ -7,7 +7,6 @@ import { HabitService } from '../../services/habit.service';
 import { Habit, HabitPreview, HabitUpdatingDTO } from '../../models/habit.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 interface HabitFilter {
@@ -18,8 +17,8 @@ interface HabitFilter {
 @Component({
   selector: 'app-habits',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbModule],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+
   templateUrl: './habits.component.html',
   styleUrls: ['./habits.component.css', './modal-styles.css']
 })
@@ -57,7 +56,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
 
   constructor(
     private habitService: HabitService,
-    private modalService: NgbModal,
+    @Inject(NgbModal) private modalService: NgbModal,
     private fb: FormBuilder,
     private router: Router,
     private pageTitleService: PageTitleService
@@ -181,7 +180,7 @@ export class HabitsComponent implements OnInit, OnDestroy {
     });
     
     modalRef.result.then(
-      (result) => {
+      (result: string) => {
         if (result === 'delete') {
           this.deleteHabit(habitId);
         }

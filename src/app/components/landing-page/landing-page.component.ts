@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -6,6 +6,7 @@ import { AuthService } from '../../services/auth.service';
 import { CredencialesUserDTO } from '../../models/user.model';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faUser, faLock, faEnvelope, faArrowRight, faEye, faEyeSlash, faCheck, faXmark, faTasks, faChartLine, faCalendarCheck } from '@fortawesome/free-solid-svg-icons';
+import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
 
 @Component({
   selector: 'app-landing-page',
@@ -330,7 +331,8 @@ import { faUser, faLock, faEnvelope, faArrowRight, faEye, faEyeSlash, faCheck, f
     }
   `]
 })
-export class LandingPageComponent {
+export class LandingPageComponent implements OnInit {
+  // Icons
   faUser = faUser;
   faLock = faLock;
   faEnvelope = faEnvelope;
@@ -343,20 +345,31 @@ export class LandingPageComponent {
   faChartLine = faChartLine;
   faCalendarCheck = faCalendarCheck;
 
-  showLoginModal = false;
-  showRegisterModal = false;
+  // Form controls
   loginForm: FormGroup;
   registerForm: FormGroup;
   loginFormSubmitted = false;
   registerFormSubmitted = false;
   loginError = '';
   registerError = '';
+  showLoginModal = false;
+  showRegisterModal = false;
+  showPassword = false;
 
   constructor(
-    private fb: FormBuilder, 
+    private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private library: FaIconLibrary
   ) {
+    // Add icons to the library
+    this.library.addIcons(
+      faUser, faLock, faEnvelope, faArrowRight, 
+      faEye, faEyeSlash, faCheck, faXmark, 
+      faTasks, faChartLine, faCalendarCheck
+    );
+
+    // Initialize forms
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required]
@@ -367,6 +380,10 @@ export class LandingPageComponent {
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
+  }
+
+  ngOnInit(): void {
+    // Component initialization
   }
 
   closeModals(event: MouseEvent): void {
