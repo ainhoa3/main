@@ -2,92 +2,155 @@ import { Component, HostListener, Input, Output, EventEmitter } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { FileCheckIconComponent } from '../../shared/components/file-check-icon/file-check-icon.component';
+import { ClockIconComponent } from '../../shared/components/clock-icon/clock-icon.component';
+import { CalendarCheckIconComponent } from '../../shared/components/calendar-check-icon/calendar-check-icon.component';
+import { SearchIconComponent } from '../../shared/components/search-icon/search-icon.component';
+import { SettingsGearIconComponent } from '../../shared/components/settings-gear-icon/settings-gear-icon.component';
+import { LayoutPanelTopIconComponent } from '../../shared/components/layout-panel-top-icon/layout-panel-top-icon.component';
+import { LogoutIconComponent } from '../../shared/components/logout-icon/logout-icon.component';
+import { MenuIconComponent } from '../../shared/components/menu-icon/menu-icon.component';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [
+    CommonModule, 
+    RouterModule, 
+    FileCheckIconComponent, 
+    ClockIconComponent,
+    CalendarCheckIconComponent,
+    SearchIconComponent,
+    SettingsGearIconComponent,
+    LayoutPanelTopIconComponent,
+    LogoutIconComponent,
+    MenuIconComponent
+  ],
   template: `
-    <aside class="sidebar" [class.collapsed]="collapsed">
+    <aside class="sidebar" [class.collapsed]="collapsed" (mouseleave)="resetAllHoverStates()">
       <div class="sidebar-header">
         <div class="logo">
           <span class="logo-text">DailyFlow</span>
         </div>
-        <button class="toggle-btn" (click)="toggleSidebar()" aria-label="Toggle sidebar">
-          <span class="hamburger">
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
+        <button 
+          class="toggle-btn" 
+          (click)="toggleSidebar()" 
+          aria-label="Toggle sidebar"
+          (mouseenter)="onMenuHover(true)"
+          (mouseleave)="onMenuHover(false)"
+        >
+          <app-menu-icon 
+            class="menu-icon" 
+            [size]="24" 
+            [isAnimated]="isMenuHovered"
+            [isOpen]="!collapsed"
+          ></app-menu-icon>
         </button>
       </div>
       <nav class="nav-menu">
         <ul>
-          <li>
+          <li class="nav-item">
             <a 
               routerLink="/dashboard" 
               [class.active]="currentUrl === '/dashboard'" 
               class="nav-link"
+              (mouseenter)="onDashboardHover(true)"
+              (mouseleave)="onDashboardHover(false)"
             >
-              <span class="icon">📊</span>
+              <app-layout-panel-top-icon class="icon" [size]="20" [isHovered]="isDashboardHovered"></app-layout-panel-top-icon>
               <span class="text">Dashboard</span>
             </a>
           </li>
-          <li>
+          <li class="nav-item">
             <a 
               routerLink="/tasks" 
               [class.active]="currentUrl === '/tasks'" 
               class="nav-link"
+              #tasksLink
+              (mouseenter)="onTaskHover(true)"
+              (mouseleave)="onTaskHover(false)"
             >
-              <span class="icon">📝</span>
+              <app-file-check-icon class="icon" [size]="20" [isHovered]="isTaskHovered"></app-file-check-icon>
               <span class="text">Tareas</span>
             </a>
           </li>
-          <li>
+          <li class="nav-item">
             <a 
               routerLink="/habits" 
               [class.active]="currentUrl === '/habits'" 
               class="nav-link"
+              (mouseenter)="onHabitsHover(true)"
+              (mouseleave)="onHabitsHover(false)"
             >
-              <span class="icon">🔄</span>
+              <app-clock-icon class="icon" [size]="20" [isHovered]="isHabitsHovered"></app-clock-icon>
               <span class="text">Hábitos</span>
             </a>
           </li>
-          <li>
+          <li class="nav-item">
             <a 
               routerLink="/calendar" 
               [class.active]="currentUrl === '/calendar'" 
               class="nav-link"
+              (mouseenter)="onCalendarHover(true)"
+              (mouseleave)="onCalendarHover(false)"
             >
-              <span class="icon">📆</span>
+              <app-calendar-check-icon class="icon" [size]="20" [isHovered]="isCalendarHovered"></app-calendar-check-icon>
               <span class="text">Calendario</span>
             </a>
           </li>
-          <li>
+          <li class="nav-item">
             <a 
               routerLink="/search" 
               [class.active]="currentUrl === '/search'" 
               class="nav-link"
+              (mouseenter)="onSearchHover(true)"
+              (mouseleave)="onSearchHover(false)"
             >
-              <span class="icon">🔍</span>
+              <app-search-icon class="icon" [size]="20" [isHovered]="isSearchHovered"></app-search-icon>
               <span class="text">Buscar</span>
             </a>
           </li>
         </ul>
       </nav>
       <div class="sidebar-footer">
-        <a routerLink="/settings" class="nav-link">
-          <span class="icon">⚙️</span>
+        <a 
+          routerLink="/settings" 
+          [class.active]="currentUrl === '/settings'" 
+          class="nav-link"
+          (mouseenter)="onSettingsHover(true)"
+          (mouseleave)="onSettingsHover(false)"
+        >
+          <app-settings-gear-icon class="icon" [size]="20" [isHovered]="isSettingsHovered"></app-settings-gear-icon>
           <span class="text">Ajustes</span>
         </a>
-        <button (click)="logout()" class="nav-link logout">
-          <span class="icon">🚪</span>
+        <button 
+          (click)="logout()" 
+          class="nav-link logout"
+          (mouseenter)="onLogoutHover(true)"
+          (mouseleave)="onLogoutHover(false)"
+        >
+          <app-logout-icon class="icon" [size]="20" [isHovered]="isLogoutHovered"></app-logout-icon>
           <span class="text">Cerrar Sesión</span>
         </button>
       </div>
     </aside>
   `,
   styles: [`
+    .nav-item {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .nav-item .nav-link {
+      position: relative;
+      z-index: 1;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-item:hover .nav-link {
+      transform: translateX(5px);
+    }
+    
     .sidebar {
       width: 260px;
       height: 100vh;
@@ -148,23 +211,14 @@ import { filter } from 'rxjs/operators';
       display: flex;
       align-items: center;
       justify-content: center;
-    }
+      border-radius: 4px;
+      transition: background-color 0.2s;
+      color: #000;
 
-    .hamburger {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      width: 20px;
-      height: 14px;
-      position: relative;
-    }
-
-    .hamburger span {
-      display: block;
-      width: 100%;
-      height: 2px;
-      background: var(--primary-color, #2ecc71);
-      border-radius: 2px;
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+        color: var(--primary-color, #2ecc71);
+      }
     }
 
     .nav-menu {
@@ -269,6 +323,14 @@ export class SidebarComponent {
   @Output() toggleCollapse = new EventEmitter<boolean>();
   
   currentUrl: string = '';
+  isTaskHovered = false;
+  isHabitsHovered = false;
+  isCalendarHovered = false;
+  isSearchHovered = false;
+  isSettingsHovered = false;
+  isDashboardHovered = false;
+  isLogoutHovered = false;
+  isMenuHovered = false;
   isMobile = false;
 
   constructor(private router: Router) {
@@ -304,5 +366,48 @@ export class SidebarComponent {
   logout(): void {
     // Call auth service logout method
     this.router.navigate(['/']);
+  }
+
+  onTaskHover(isHovered: boolean): void {
+    this.isTaskHovered = isHovered;
+  }
+
+  onHabitsHover(isHovered: boolean): void {
+    this.isHabitsHovered = isHovered;
+  }
+
+  onCalendarHover(isHovered: boolean): void {
+    this.isCalendarHovered = isHovered;
+  }
+
+  onSearchHover(isHovered: boolean): void {
+    this.isSearchHovered = isHovered;
+  }
+
+  onSettingsHover(isHovered: boolean): void {
+    this.isSettingsHovered = isHovered;
+  }
+
+  onDashboardHover(isHovered: boolean): void {
+    this.isDashboardHovered = isHovered;
+  }
+
+  onLogoutHover(isHovered: boolean): void {
+    this.isLogoutHovered = isHovered;
+  }
+
+  onMenuHover(isHovered: boolean): void {
+    this.isMenuHovered = isHovered;
+  }
+
+  resetAllHoverStates(): void {
+    this.isTaskHovered = false;
+    this.isHabitsHovered = false;
+    this.isCalendarHovered = false;
+    this.isSearchHovered = false;
+    this.isSettingsHovered = false;
+    this.isDashboardHovered = false;
+    this.isLogoutHovered = false;
+    this.isMenuHovered = false;
   }
 }
