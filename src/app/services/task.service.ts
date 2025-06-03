@@ -9,7 +9,7 @@ import { Task, TaskCreatingDTO, TaskUpdatingDTO, TaskPreview } from '../models/t
 })
 export class TaskService {
   private apiUrl = 'http://localhost:5112/DailyFlow/api/Tasks';
-
+  
   constructor(private http: HttpClient, private authService: AuthService) { }
 
   // Create a new task

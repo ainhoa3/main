@@ -1,0 +1,184 @@
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
+import { filter, debounceTime } from 'rxjs/operators';
+import { fromEvent, Subscription } from 'rxjs';
+
+import { SidebarComponent } from './components/sidebar/sidebar.component';
+import { HeaderComponent } from './components/header/header.component';
+import { AuthService } from './services/auth.service';
+import { PageTitleService } from './services/page-title.service';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    CommonModule, 
+    RouterOutlet, 
+    SidebarComponent, 
+    HeaderComponent
+  ],
+  template: `
+    <div class="app-container">
+      <app-sidebar 
+        *ngIf="isLoggedIn && !isLandingPage"
+        (toggleCollapse)="onSidebarToggle($event)"
+        [collapsed]="isSidebarCollapsed"
+        [class.sidebar-collapsed]="isSidebarCollapsed"
+        [class.sidebar-expanded]="!isSidebarCollapsed"
+      ></app-sidebar>
+      <div 
+        class="main-content" 
+        [class.with-sidebar]="isLoggedIn && !isLandingPage"
+        [class.sidebar-collapsed]="isLoggedIn && !isLandingPage && isSidebarCollapsed"
+        [class.sidebar-expanded]="isLoggedIn && !isLandingPage && !isSidebarCollapsed"
+      >
+        <app-header 
+          *ngIf="isLoggedIn && !isLandingPage" 
+          [pageName]="currentPageName"
+          [showMenuButton]="isMobile || isSidebarCollapsed"
+          (toggleSidebar)="toggleSidebar()"
+        ></app-header>
+        <div class="content-wrapper">
+          <router-outlet></router-outlet>
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    :host {
+      --sidebar-width: 250px;
+      --sidebar-collapsed-width: 70px;
+      --header-height: 64px;
+    }
+
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+      background-color: #f5f7fa;
+    }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      transition: margin-left 0.3s ease;
+      margin-left: 0;
+      width: 100%;
+    }
+
+    .main-content.with-sidebar {
+      margin-left: var(--sidebar-collapsed-width);
+      width: calc(100% - var(--sidebar-collapsed-width));
+    }
+
+    .main-content.sidebar-expanded {
+      margin-left: var(--sidebar-width);
+      width: calc(100% - var(--sidebar-width));
+    }
+
+    .content-wrapper {
+      flex: 1;
+      padding: 1.5rem;
+      margin-top: var(--header-height);
+      overflow-y: auto;
+      max-height: calc(100vh - var(--header-height));
+    }
+
+    @media (max-width: 768px) {
+      .main-content.with-sidebar,
+      .main-content.sidebar-expanded {
+        margin-left: 0;
+        width: 100%;
+      }
+      
+      .content-wrapper {
+        padding: 1rem;
+      }
+    }
+  `]
+})
+export class AppComponent implements OnInit, OnDestroy {
+  isSidebarCollapsed = false;
+  isLoggedIn = false;
+  isLandingPage = true;
+  isMobile = false;
+  private resizeSubscription?: Subscription;
+
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private pageTitleService: PageTitleService
+  ) {
+    this.checkAuthStatus();
+    this.listenToRouteChanges();
+    this.checkIfMobile();
+  }
+
+  get currentPageName(): string {
+    return this.pageTitleService.getPageTitle();
+  }
+
+  ngOnInit(): void {
+    this.setupResizeListener();
+  }
+
+  ngOnDestroy(): void {
+    if (this.resizeSubscription) {
+      this.resizeSubscription.unsubscribe();
+    }
+  }
+
+  private setupResizeListener(): void {
+    this.resizeSubscription = fromEvent(window, 'resize').pipe(
+      debounceTime(100)
+    ).subscribe(() => {
+      this.checkIfMobile();
+    });
+  }
+
+  private checkIfMobile(): void {
+    this.isMobile = window.innerWidth < 768;
+  }
+
+  toggleSidebar(): void {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+  }
+
+  private checkAuthStatus(): void {
+    this.isLoggedIn = this.authService.isAuthenticated();
+  }
+
+  onSidebarToggle(isCollapsed: boolean): void {
+    this.isSidebarCollapsed = isCollapsed;
+  }
+
+  private listenToRouteChanges(): void {
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+    ).subscribe(event => {
+      this.isLandingPage = event.url === '/' || event.url === '/login' || event.url === '/register';
+      this.checkAuthStatus();
+      this.updatePageTitle(event.url);
+    });
+  }
+
+  private updatePageTitle(url: string): void {
+    if (url.includes('habits')) {
+      this.pageTitleService.setPageTitle('Hábitos');
+    } else if (url.includes('tasks')) {
+      this.pageTitleService.setPageTitle('Tareas');
+    } else if (url.includes('goals')) {
+      this.pageTitleService.setPageTitle('Objetivos');
+    } else if (url.includes('calendar')) {
+      this.pageTitleService.setPageTitle('Calendario');
+    } else if (url.includes('search')) {
+      this.pageTitleService.setPageTitle('Buscar');
+    } else if (url.includes('dashboard') || url === '/') {
+      this.pageTitleService.setPageTitle('Dashboard');
+    } else {
+      this.pageTitleService.setPageTitle('DailyFlow');
+    }
+  }
+}

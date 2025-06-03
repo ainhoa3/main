@@ -4,18 +4,26 @@ import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { CredencialesUserDTO } from '../../models/user.model';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faUser, faLock, faEnvelope, faArrowRight, faEye, faEyeSlash, faCheck, faXmark, faTasks, faChartLine, faCalendarCheck } from '@fortawesome/free-solid-svg-icons';
 
 @Component({
   selector: 'app-landing-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FontAwesomeModule],
   template: `
     <div class="landing-page">
       <header class="header">
         <div class="logo">DailyFlow</div>
         <div class="nav-buttons">
-          <button class="btn btn-outline" (click)="showLoginModal = true">Iniciar Sesión</button>
-          <button class="btn btn-primary" (click)="showRegisterModal = true">Registrarse</button>
+          <button class="btn btn-outline" (click)="showLoginModal = true">
+            <fa-icon [icon]="faLock"></fa-icon>
+            Iniciar Sesión
+          </button>
+          <button class="btn btn-primary" (click)="showRegisterModal = true">
+            <fa-icon [icon]="faUser"></fa-icon>
+            Registrarse
+          </button>
         </div>
       </header>
 
@@ -24,25 +32,32 @@ import { CredencialesUserDTO } from '../../models/user.model';
           <h1>Gestiona tu día a día con DailyFlow</h1>
           <p>Una aplicación simple pero poderosa para organizar tus tareas y construir hábitos positivos.</p>
           <button class="btn btn-primary hero-cta" (click)="showRegisterModal = true">
+            <fa-icon [icon]="faArrowRight"></fa-icon>
             Empieza ahora - ¡Es gratis!
           </button>
         </div>
 
         <div class="features">
           <div class="feature-card">
-            <div class="feature-icon">📋</div>
+            <div class="feature-icon">
+              <fa-icon [icon]="faTasks"></fa-icon>
+            </div>
             <h3>Gestión de tareas</h3>
             <p>Organiza tus tareas diarias, establece prioridades y cumple con tus objetivos.</p>
           </div>
           
           <div class="feature-card">
-            <div class="feature-icon">🔄</div>
+            <div class="feature-icon">
+              <fa-icon [icon]="faChartLine"></fa-icon>
+            </div>
             <h3>Seguimiento de hábitos</h3>
             <p>Crea y mantén hábitos saludables que te ayuden a mejorar cada día.</p>
           </div>
           
           <div class="feature-card">
-            <div class="feature-icon">📊</div>
+            <div class="feature-icon">
+              <fa-icon [icon]="faCalendarCheck"></fa-icon>
+            </div>
             <h3>Visualiza tu progreso</h3>
             <p>Mantén tu racha de días consecutivos y visualiza tus tareas en un calendario.</p>
           </div>
@@ -58,7 +73,9 @@ import { CredencialesUserDTO } from '../../models/user.model';
         <div class="modal-content">
           <div class="modal-header">
             <h2>Iniciar Sesión</h2>
-            <button class="close-btn" (click)="showLoginModal = false">✕</button>
+            <button class="close-btn" (click)="showLoginModal = false">
+            <fa-icon [icon]="faXmark"></fa-icon>
+          </button>
           </div>
           <div class="modal-body">
             <form [formGroup]="loginForm" (ngSubmit)="login()">
@@ -97,8 +114,14 @@ import { CredencialesUserDTO } from '../../models/user.model';
             </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline" (click)="showLoginModal = false">Cancelar</button>
-            <button type="button" class="btn btn-primary" (click)="login()">Iniciar Sesión</button>
+            <button type="button" class="btn btn-outline" (click)="showLoginModal = false">
+              <fa-icon [icon]="faXmark"></fa-icon>
+              Cancelar
+            </button>
+            <button type="button" class="btn btn-primary" (click)="login()">
+              <fa-icon [icon]="faLock"></fa-icon>
+              Iniciar Sesión
+            </button>
           </div>
         </div>
       </div>
@@ -108,7 +131,9 @@ import { CredencialesUserDTO } from '../../models/user.model';
         <div class="modal-content">
           <div class="modal-header">
             <h2>Registrarse</h2>
-            <button class="close-btn" (click)="showRegisterModal = false">✕</button>
+            <button class="close-btn" (click)="showRegisterModal = false">
+            <fa-icon [icon]="faXmark"></fa-icon>
+          </button>
           </div>
           <div class="modal-body">
             <form [formGroup]="registerForm" (ngSubmit)="register()">
@@ -162,8 +187,14 @@ import { CredencialesUserDTO } from '../../models/user.model';
             </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline" (click)="showRegisterModal = false">Cancelar</button>
-            <button type="button" class="btn btn-primary" (click)="register()">Registrarse</button>
+            <button type="button" class="btn btn-outline" (click)="showRegisterModal = false">
+              <fa-icon [icon]="faXmark"></fa-icon>
+              Cancelar
+            </button>
+            <button type="button" class="btn btn-primary" (click)="register()">
+              <fa-icon [icon]="faUser"></fa-icon>
+              Registrarse
+            </button>
           </div>
         </div>
       </div>
@@ -300,6 +331,18 @@ import { CredencialesUserDTO } from '../../models/user.model';
   `]
 })
 export class LandingPageComponent {
+  faUser = faUser;
+  faLock = faLock;
+  faEnvelope = faEnvelope;
+  faArrowRight = faArrowRight;
+  faEye = faEye;
+  faEyeSlash = faEyeSlash;
+  faCheck = faCheck;
+  faXmark = faXmark;
+  faTasks = faTasks;
+  faChartLine = faChartLine;
+  faCalendarCheck = faCalendarCheck;
+
   showLoginModal = false;
   showRegisterModal = false;
   loginForm: FormGroup;
