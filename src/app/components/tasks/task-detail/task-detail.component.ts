@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TaskService } from '../../../services/task.service';
 import { Task, WORK_ENVIRONMENT, PERSONAL_ENVIRONMENT, getEnvironmentString, TaskUpdatingDTO } from '../../../models/task.model';
+import { DeleteIconComponent } from '../../../shared/components/delete-icon/delete-icon.component';
 
 @Component({
   selector: 'app-task-detail',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, DeleteIconComponent],
   template: `
     <div class="modal-backdrop" (click)="onBackdropClick($event)">
       <div class="modal-content task-detail">
@@ -79,8 +80,13 @@ import { Task, WORK_ENVIRONMENT, PERSONAL_ENVIRONMENT, getEnvironmentString, Tas
         <div class="modal-footer">
           <div class="btn-group">
             <button *ngIf="!isEditing" class="btn btn-outline" (click)="startEditing()">Editar</button>
-            <button *ngIf="!isEditing" class="btn btn-danger" (click)="deleteTask()" title="Eliminar tarea">
-              <i class="fas fa-trash-alt"></i> Eliminar
+            <button *ngIf="!isEditing" class="btn btn-danger d-flex align-items-center gap-2" 
+                    (click)="deleteTask()" 
+                    (mouseenter)="deleteHover = true" 
+                    (mouseleave)="deleteHover = false" 
+                    title="Eliminar tarea">
+              <app-delete-icon [size]="18" [isHovered]="deleteHover"></app-delete-icon>
+              <span>Eliminar</span>
             </button>
           </div>
           <button *ngIf="isEditing" class="btn btn-outline" (click)="cancelEdit()">Cancelar</button>
@@ -224,6 +230,7 @@ export class TaskDetailComponent implements OnInit {
   WORK_ENVIRONMENT = WORK_ENVIRONMENT;
   PERSONAL_ENVIRONMENT = PERSONAL_ENVIRONMENT;
   isDeleting: boolean = false;
+  deleteHover: boolean = false;
 
 
   constructor(

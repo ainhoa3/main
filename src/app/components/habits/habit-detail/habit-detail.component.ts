@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Habit } from '../../../models/habit.model';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { HabitService } from '../../../services/habit.service';
+import { DeleteIconComponent } from '../../../shared/components/delete-icon/delete-icon.component';
 
 @Component({
   selector: 'app-habit-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DeleteIconComponent],
   template: `
     <div class="modal-header">
       <h4 class="modal-title">{{ habit?.title }}</h4>
@@ -41,8 +42,13 @@ import { HabitService } from '../../../services/habit.service';
     </div>
     <div class="modal-footer">
       <div class="btn-group">
-        <button type="button" class="btn btn-danger" (click)="deleteHabit()" title="Eliminar hábito">
-          <i class="fas fa-trash-alt"></i> Eliminar
+        <button type="button" class="btn btn-danger d-flex align-items-center gap-2" 
+                (click)="deleteHabit()" 
+                (mouseenter)="deleteHover = true" 
+                (mouseleave)="deleteHover = false" 
+                title="Eliminar hábito">
+          <app-delete-icon [size]="18" [isHovered]="deleteHover"></app-delete-icon>
+          <span>Eliminar</span>
         </button>
       </div>
       <button type="button" class="btn btn-secondary" (click)="modalRef.close()">Cerrar</button>
@@ -90,6 +96,7 @@ export class HabitDetailComponent {
   @Input() habit: Habit | null = null;
   modalRef!: NgbModalRef;
   isDeleting: boolean = false;
+  deleteHover: boolean = false;
 
   constructor(
     @Inject(NgbModal) private modalService: NgbModal,
