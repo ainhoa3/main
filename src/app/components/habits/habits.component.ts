@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
-import { NgbModal, NgbModalRef, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PageTitleService } from '../../services/page-title.service';
@@ -8,8 +8,6 @@ import { Habit, HabitPreview, HabitUpdatingDTO } from '../../models/habit.model'
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { SpinnerComponent } from '../../shared/spinner/spinner.component';
-import { HeaderComponent } from '../../components/header/header.component';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 interface HabitFilter {
@@ -20,7 +18,7 @@ interface HabitFilter {
 @Component({
   selector: 'app-habits',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbModule, SpinnerComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './habits.component.html',
   styleUrls: ['./habits.component.css', './modal-styles.css']
@@ -28,6 +26,7 @@ interface HabitFilter {
 export class HabitsComponent implements OnInit {
   @ViewChild('editModal') editModal!: TemplateRef<any>;
   @ViewChild('detailModal') detailModal!: TemplateRef<any>;
+  @ViewChild('deleteModal') deleteModal!: TemplateRef<any>;
 
   habits: HabitPreview[] = [];
   allHabits: HabitPreview[] = [];
@@ -35,7 +34,8 @@ export class HabitsComponent implements OnInit {
 
   currentFilter: string | null = null;
   selectedHabitId: number | null = null;
-  habitDetail!: Habit;
+  selectedHabit: Habit | null = null;
+  habitDetail: Habit | null = null;
   private _modalRef: NgbModalRef | null = null;
   
   get modalRef(): NgbModalRef | null {
@@ -45,17 +45,10 @@ export class HabitsComponent implements OnInit {
   set modalRef(ref: NgbModalRef | null) {
     this._modalRef = ref;
   }
+
   isEditing = false;
   habitForm!: FormGroup;
   loading = false;
-
-  closeModal(): void {
-    if (this._modalRef) {
-      this._modalRef.close();
-      this._modalRef = null;
-    }
-  }
-
 
   constructor(
     private habitService: HabitService,
@@ -64,7 +57,6 @@ export class HabitsComponent implements OnInit {
     private router: Router,
     private pageTitleService: PageTitleService
   ) {
-    // Set page name for header
     if (this.router.url.includes('habits')) {
       this.pageTitleService.setPageTitle('Hábitos');
     }
@@ -75,16 +67,51 @@ export class HabitsComponent implements OnInit {
     this.loadHabits();
   }
 
-  initializeForm(): void {
-    this.habitForm = this.formBuilder.group({
-      title: ['', Validators.required],
-      description: [''],
-      programmDays: [1, [Validators.required, Validators.min(1)]],
-      startingDay: [new Date(), Validators.required],
-      environment: [0, Validators.required]
-    });
+  closeModal(): void {
+    if (this.modalRef) {
+      this.modalRef.close();
+      this.modalRef = null;
+    }
+    this.selectedHabit = null;
+    this.habitDetail = null;
+    this.isEditing = false;
+    this.habitForm.reset();
   }
 
+  onBackdropClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (target.classList.contains('modal-backdrop')) {
+      this.closeModal();
+    }
+  }
+
+  // Form and Data Handling
+  initializeForm(): void {
+    if (this.habitDetail) {
+      const lastDay = new Date(this.habitDetail.lastDay);
+      const formattedDate = lastDay.toISOString().split('T')[0];
+      
+      this.habitForm = this.formBuilder.group({
+        title: [this.habitDetail.title, Validators.required],
+        description: [this.habitDetail.description || ''],
+        environment: [this.habitDetail._Environment === 'work' ? 1 : 0, Validators.required],
+        programmDays: [this.habitDetail.programmDays, [Validators.required, Validators.min(1)]],
+        lastDay: [formattedDate, Validators.required],
+        done: [this.habitDetail.done || false]
+      });
+    } else {
+      this.habitForm = this.formBuilder.group({
+        title: ['', Validators.required],
+        description: [''],
+        environment: [0, Validators.required],
+        programmDays: [1, [Validators.required, Validators.min(1)]],
+        lastDay: [new Date().toISOString().split('T')[0], Validators.required],
+        done: [false]
+      });
+    }
+  }
+
+  // Data Loading
   loadHabits(): void {
     this.loading = true;
     this.habitService.getHabitsOfTheDayPreview().subscribe({
@@ -99,6 +126,83 @@ export class HabitsComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  loadHabitDetail(habitId: number): void {
+    this.loading = true;
+    this.habitService.getHabit(habitId).subscribe({
+      next: (habit: Habit) => {
+        this.habitDetail = habit;
+        this.selectedHabit = habit;
+        this.initializeForm();
+        this.loading = false;
+      },
+      error: (error: any) => {
+        console.error('Error loading habit details:', error);
+        this.loading = false;
+      }
+    });
+  }
+
+  // CRUD Operations
+  confirmDelete(habitId: number): void {
+    if (confirm('¿Estás seguro de que deseas eliminar este hábito?')) {
+      this.habitService.deleteHabit(habitId).subscribe({
+        next: () => {
+          this.habits = this.habits.filter(h => h.id !== habitId);
+          this.allHabits = this.allHabits.filter(h => h.id !== habitId);
+          this.filteredHabits = this.filteredHabits.filter(h => h.id !== habitId);
+          this.closeModal();
+        },
+        error: (error: any) => {
+          console.error('Error deleting habit:', error);
+        }
+      });
+    }
+  }
+
+  onSave(): void {
+    if (this.habitForm.valid && this.selectedHabit) {
+      const formValue = this.habitForm.value;
+      const lastDay = new Date(formValue.lastDay);
+      
+      const updatedHabit: HabitUpdatingDTO = {
+        title: formValue.title,
+        description: formValue.description || '',
+        environment: formValue.environment,
+        programmDays: formValue.programmDays,
+        lastDay: lastDay.toISOString(),
+        done: formValue.done || false
+      };
+
+      if (this.selectedHabit.id) {
+        this.habitService.updateHabit(this.selectedHabit.id, updatedHabit).subscribe({
+          next: () => {
+            this.loadHabits();
+            this.isEditing = false;
+          },
+          error: (error: any) => {
+            console.error('Error updating habit:', error);
+          }
+        });
+      }
+    }
+  }
+
+  deleteHabit(habitId: number): void {
+    if (confirm('¿Estás seguro de que deseas eliminar este hábito?')) {
+      this.habitService.deleteHabit(habitId).subscribe({
+        next: () => {
+          this.habits = this.habits.filter(h => h.id !== habitId);
+          this.allHabits = this.allHabits.filter(h => h.id !== habitId);
+          this.filteredHabits = this.filteredHabits.filter(h => h.id !== habitId);
+          this.closeModal();
+        },
+        error: (error: any) => {
+          console.error('Error deleting habit:', error);
+        }
+      });
+    }
   }
 
   markAsDone(habitId: number): void {
@@ -118,199 +222,83 @@ export class HabitsComponent implements OnInit {
     }
   }
 
-  filterEnvironment(environment: string): void {
-    if (environment === 'all') {
-      this.filteredHabits = [...this.allHabits];
-    } else {
-      // Convert string to number (0 for personal, 1 for work)
-      const envNumber = environment === 'work' ? 1 : 0;
-      this.filteredHabits = this.allHabits.filter(h => Number(h._Environment) === envNumber);
-    }
-    this.currentFilter = environment;
-  }
-
-  clearFilter(): void {
-    this.filteredHabits = [...this.allHabits];
-    this.currentFilter = null;
-  }
-
-  applyFilter(filterValue: string, envValue: string): void {
-    if (filterValue === 'all' && envValue === 'all') {
-      this.filteredHabits = [...this.allHabits];
-    } else {
-      this.filteredHabits = this.allHabits.filter(h => {
-        const matchesFilter = filterValue === 'all' || 
-          (filterValue === 'personal' && h._Environment === 'personal') ||
-          (filterValue === 'work' && h._Environment === 'work');
-        const matchesEnv = envValue === 'all' || 
-          (envValue === '0' && h._Environment === 'personal') ||
-          (envValue === '1' && h._Environment === 'work');
-        return matchesFilter && matchesEnv;
-      });
-    }
-    this.currentFilter = `${filterValue}-${envValue}`;
-  }
-
-  getEnvironmentString(_Environment: string): string {
-    return _Environment === 'work' ? 'Trabajo' : 'Personal';
-  }
-
-  convertEnvironmentToNumber(_Environment: string): number {
-    return _Environment === 'work' ? 1 : 0;
-  }
-
-  onBackdropClick(event: MouseEvent): void {
-    if (this.modalRef && (event.target as HTMLElement).classList.contains('modal-backdrop')) {
-      this.modalRef.close();
-      this.modalRef = null;
-    }
-  }
-
-  closeHabitModal(): void {
-    this.isEditing = false;
-    this.habitDetail = null as any; // Reset the habit detail
-    this.habitForm.reset(); // Reset the form
-    this.closeModal();
-  }
-
-  openEditModal(habit: Habit): void {
-    this.habitDetail = habit;
+  // UI Helpers
+  startEditing(): void {
+    if (!this.habitDetail) return;
     this.isEditing = true;
-    
-    // Initialize the form with the habit data
-    this.habitForm = this.formBuilder.group({
-      title: [habit.title, [Validators.required]],
-      description: [habit.description],
-      environment: [habit._Environment === 'work' ? 1 : 0, [Validators.required]],
-      programmDays: [habit.programmDays, [Validators.required, Validators.min(1)]],
-      lastDay: [new Date(habit.lastDay).toISOString().split('T')[0], [Validators.required]],
-      done: [habit.done || false]
-    });
-
-    this.modalRef = this.modalService.open(this.editModal, {
-      size: 'lg',
-      backdrop: true,
-      keyboard: true,
-      windowClass: 'habit-detail-modal',
-      centered: true,
-      scrollable: true
-    });
   }
 
   cancelEdit(): void {
-    if (this.habitDetail) {
-      // Reset the form with the original habit data
-      this.habitForm.patchValue({
-        title: this.habitDetail.title,
-        description: this.habitDetail.description,
-        environment: this.habitDetail._Environment === 'work' ? 1 : 0,
-        programmDays: this.habitDetail.programmDays,
-        lastDay: new Date(this.habitDetail.lastDay).toISOString().split('T')[0],
-        done: this.habitDetail.done || false
-      });
-    }
     this.isEditing = false;
+    if (this.habitDetail) {
+      this.initializeForm();
+    }
   }
 
-  startEditing(): void {
-    if (!this.habitDetail) return;
-    
-    this.isEditing = true;
-    this.habitForm = this.formBuilder.group({
-      title: [this.habitDetail.title, [Validators.required]],
-      description: [this.habitDetail.description],
-      environment: [this.habitDetail._Environment === 'work' ? 1 : 0, [Validators.required]],
-      programmDays: [this.habitDetail.programmDays, [Validators.required, Validators.min(1)]],
-      lastDay: [new Date(this.habitDetail.lastDay).toISOString().split('T')[0], [Validators.required]],
-      done: [this.habitDetail.done || false]
-    });
-  }
-
-  openHabitDetail(habitId: number): void {
-    this.selectedHabitId = habitId;
+  openHabitDetail(habit: HabitPreview): void {
     this.loading = true;
-    this.habitService.getHabit(habitId).subscribe({
-      next: (habit: Habit) => {
-        this.habitDetail = habit;
+    this.habitService.getHabit(habit.id).subscribe({
+      next: (habitDetail: Habit) => {
+        this.habitDetail = habitDetail;
+        this.selectedHabit = habitDetail;
         this.isEditing = false;
-        // Initialize the form with the habit data
-        this.habitForm = this.formBuilder.group({
-          title: [habit.title, [Validators.required]],
-          description: [habit.description],
-          environment: [habit._Environment === 'work' ? 1 : 0, [Validators.required]],
-          programmDays: [habit.programmDays, [Validators.required, Validators.min(1)]],
-          lastDay: [new Date(habit.lastDay).toISOString().split('T')[0], [Validators.required]],
-          done: [habit.done || false]
-        });
-        this.loading = false;
-        const modalRef = this.modalService.open(this.detailModal, {
+        this.initializeForm();
+        
+        this.modalRef = this.modalService.open(this.detailModal, {
           size: 'lg',
-          backdrop: false,
+          backdrop: true,
           keyboard: true,
           windowClass: 'habit-detail-modal',
           centered: true,
           scrollable: true
         });
-        this.modalRef = modalRef;
         
-        modalRef.result.then(
-          () => {
-            // Se ejecuta cuando el modal se cierra con modalRef.close()
-            this.modalRef = null;
-          },
-          () => {
-            // Se ejecuta cuando el modal se descarta (con tecla ESC o haciendo clic fuera)
-            this.modalRef = null;
-          }
-        );
+        this.loading = false;
       },
       error: (error: any) => {
-        console.error('Error loading habit detail:', error);
+        console.error('Error loading habit details:', error);
+        this.loading = false;
       }
     });
   }
 
-  saveHabit(): void {
-    if (this.habitForm.valid && this.habitDetail) {
-      const formValue = this.habitForm.value;
-      const habitData: HabitUpdatingDTO = {
-        title: formValue.title,
-        description: formValue.description || '',
-        environment: formValue.environment, // This should be a number (0 or 1)
-        programmDays: formValue.programmDays,
-        lastDay: formValue.lastDay,
-        done: formValue.done || false
-      };
+  // Navigation
+  navigateToCreate(): void {
+    this.router.navigate(['/habits/create']);
+  }
 
-      this.loading = true;
-      this.habitService.updateHabit(this.habitDetail.id, habitData).subscribe({
-        next: (updated: Habit) => {
-          // Update the habit in the list
-          const habitIndex = this.habits.findIndex(h => h.id === this.habitDetail?.id);
-          if (habitIndex !== -1) {
-            this.habits[habitIndex] = {
-              ...this.habits[habitIndex],
-              title: updated.title,
-              _Environment: updated._Environment,
-              done: updated.done,
-              programmDays: updated.programmDays,
-              lastDay: updated.lastDay
-            };
-          }
-          
-          // Update the displayed habit detail
-          this.habitDetail = updated;
-          this.isEditing = false;
-          this.loading = false;
-          
-          // Refresh the habits list
-          this.loadHabits();
-        },
-        error: (error: any) => {
-          console.error('Error updating habit:', error);
-          this.loading = false;
+  // Filtering
+  clearFilter(): void {
+    this.filteredHabits = [...this.allHabits];
+    this.currentFilter = null;
+  }
+
+  applyFilter(filterValue: string): void {
+    if (filterValue === 'todos') {
+      this.filteredHabits = [...this.allHabits];
+    } else {
+      this.filteredHabits = this.allHabits.filter(h => {
+        if (filterValue === '0') {
+          return h._Environment === 'personal';
+        } else if (filterValue === '1') {
+          return h._Environment === 'work';
         }
+        return true;
       });
     }
+    this.currentFilter = filterValue;
+  }
+
+  // Helpers
+  getEnvironmentName(environment: string): string {
+    return environment === 'work' ? 'Trabajo' : 'Personal';
+  }
+
+  getEnvironmentClass(environment: string): string {
+    return environment === 'work' ? 'environment-work' : 'environment-personal';
+  }
+
+  convertEnvironmentToNumber(environment: string): number {
+    return environment === 'work' ? 1 : 0;
   }
 }

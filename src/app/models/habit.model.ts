@@ -4,7 +4,7 @@ export interface Habit {
   description: string;
   done: boolean;
   programmDays: number;
-  lastDay: Date;
+  lastDay: string | Date;
   _Environment: string;
 }
 
@@ -13,7 +13,7 @@ export interface HabitCreatingDTO {
   description: string;
   done: boolean;
   programmDays: number;
-  startingDay: Date;
+  startingDay: string | Date;
   environment: number;
 }
 
@@ -22,7 +22,7 @@ export interface HabitUpdatingDTO {
   description: string;
   done: boolean;
   programmDays: number;
-  lastDay: Date;
+  lastDay: string;
   environment: number;
 }
 
@@ -33,5 +33,5 @@ export interface HabitPreview {
   _Environment: string;
   done: boolean;
   programmDays: number;
-  lastDay: Date;
+  lastDay: string | Date;
 }

@@ -74,4 +74,12 @@ export class HabitService {
       headers: { 'Authorization': `Bearer ${token}` }
     });
   }
+
+  // Delete a habit
+  deleteHabit(id: number): Observable<void> {
+    const token = this.authService.getToken();
+    return this.http.delete<void>(`${this.apiUrl}/DeleteHabit/${id}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+  }
 }
