@@ -1,4 +1,4 @@
-import { Component, ViewChild, TemplateRef } from '@angular/core';
+import { Component, ViewChild, TemplateRef, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -825,7 +825,7 @@ export class SearchComponent implements OnInit {
   selectedTaskId: number = 0;
   selectedHabitId: number | null = null;
   loading: boolean = false;
-  
+
   convertEnvironmentToNumber(environment: number): number {
     return environment === 0 ? 0 : 1;
   }
@@ -833,15 +833,15 @@ export class SearchComponent implements OnInit {
   constructor(
     private taskService: TaskService,
     private habitService: HabitService,
-    private modalService: NgbModal,
-    private fb: FormBuilder,
-    private router: Router
+    @Inject(NgbModal) private modalService: NgbModal,
+    private router: Router,
+    private fb: FormBuilder
   ) { }
 
   search(): void {
     if (this.searchTerm.trim()) {
       this.loading = true;
-      
+
       // Search tasks
       this.taskService.searchTasks(this.searchTerm).subscribe({
         next: (tasks) => {
@@ -892,26 +892,7 @@ export class SearchComponent implements OnInit {
   openHabitDetail(habitId: number): void {
     this.habitService.getHabit(habitId).subscribe({
       next: (habit: Habit) => {
-        this.habitDetail = habit;
-        this.isEditing = false;
-        this.modalRef = this.modalService.open(this.habitModalContent, {
-          size: 'lg',
-          backdrop: false,
-          keyboard: true,
-          windowClass: 'habit-detail-modal',
-          centered: true,
-          scrollable: true
-        });
-        this.modalRef.result.then(
-          () => {
-            // Se ejecuta cuando el modal se cierra con modalRef.close()
-            this.modalRef = null;
-          },
-          () => {
-            // Se ejecuta cuando el modal se descarta (con tecla ESC o haciendo clic fuera)
-            this.modalRef = null;
-          }
-        );
+        this.openHabitModal(habit);
       },
       error: (error) => {
         console.error('Error loading habit details:', error);
@@ -919,11 +900,21 @@ export class SearchComponent implements OnInit {
     });
   }
 
+  openHabitModal(habit: any): void {
+    this.habitDetail = { ...habit };
+    this.isEditing = false;
+    if (this.habitModalContent) {
+      this.modalRef = this.modalService.open(this.habitModalContent, { size: 'lg' });
+    }
+  }
+
   closeHabitModal(): void {
     if (this.modalRef) {
       this.modalRef.close();
       this.modalRef = null;
     }
+    this.habitDetail = null;
+    this.isEditing = false;
   }
 
   onBackdropClick(event: MouseEvent): void {
