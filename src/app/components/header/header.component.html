@@ -1,5 +1,10 @@
 <header class="header">
   <div class="header-content">
+    <div class="mobile-menu-btn">
+      <button class="mobile-menu-btn" (click)="toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
     <div class="header-left">
       <button class="toggle-sidebar-btn" (click)="toggleSidebarClick()">
         <i class="fas fa-bars"></i>
@@ -11,6 +16,9 @@
     </button>
     <button class="action-btn" (click)="navigateToCreateHabit()">
       Nuevo hábito
+    </button>
+    <button class="action-btn" (click)="navigateToStreakMetrics()">
+      Ver rachas
     </button>
     <div class="header-right">
       <div class="user-info">

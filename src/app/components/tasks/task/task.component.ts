@@ -2,8 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TaskService } from '../../../services/task.service';
-import { Task } from '../../../models/task.model';
+import { Task, TaskPreview } from '../../../models/task.model';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-task',
@@ -20,7 +21,7 @@ export class TaskComponent implements OnInit {
   newTaskTitle = '';
   activeTab: 'today' | 'extra' = 'today';
 
-  constructor(private taskService: TaskService) {}
+  constructor(private taskService: TaskService, private authService: AuthService) {}
 
   ngOnInit(): void {
     this.loadTasks();
@@ -44,8 +45,8 @@ export class TaskComponent implements OnInit {
     });
 
     // Cargar tareas extra
-    this.taskService.getExtraTasksPreview().subscribe({
-      next: (tasks) => {
+    this.taskService.searchTasks('').subscribe({
+      next: (tasks: TaskPreview[]) => {
         this.extraTasks = tasks;
       },
       error: (error) => {
@@ -82,13 +83,19 @@ export class TaskComponent implements OnInit {
 
 
   toggleTaskDone(task: Task): void {
-    const updatedTask = { ...task, done: !task.done };
-    this.taskService.updateTask(updatedTask).subscribe({
-      next: () => {
-        task.done = updatedTask.done;
+    if (task.done) {
+      this.authService.addStrike().subscribe();
+    }
+    
+    this.taskService.markTaskAsDone(task.id).subscribe({
+      next: (updatedTask: Task) => {
+        const index = this.todayTasks.findIndex(t => t.id === task.id);
+        if (index !== -1) {
+          this.todayTasks[index] = updatedTask;
+        }
       },
       error: (error) => {
-        console.error('Error updating task:', error);
+        console.error('Error marking task as done:', error);
       }
     });
   }

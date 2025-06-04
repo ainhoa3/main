@@ -8,6 +8,7 @@ import { CalendarComponent } from './components/calendar/calendar.component';
 import { SearchComponent } from './components/search/search.component';
 import { HabitsComponent } from './components/habits/habits.component';
 import { SettingsComponent } from './components/settings/settings.component';
+import { StreakMetricsComponent } from './components/streak-metrics/streak-metrics.component';
 import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -50,6 +51,11 @@ export const routes: Routes = [
   { 
     path: 'search', 
     component: SearchComponent,
+    canActivate: [AuthGuard]
+  },
+  { 
+    path: 'streak-metrics',
+    component: StreakMetricsComponent,
     canActivate: [AuthGuard]
   },
   { path: '**', redirectTo: '' }

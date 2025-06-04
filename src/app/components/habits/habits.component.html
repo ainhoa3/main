@@ -44,7 +44,7 @@
           </span>
         </div>
         <div class="habit-checkbox">
-          <input type="checkbox" [checked]="habit.done" (change)="$event.stopPropagation(); markAsDone(habit.id)">
+          <input type="checkbox" [checked]="habit.done" (change)="$event.stopPropagation(); markHabitAsDone(habit.id)">
         </div>
       </div>
     </div>

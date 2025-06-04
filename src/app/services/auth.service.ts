@@ -4,6 +4,7 @@ import { CookieService } from './cookie.service';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { UserUpdatingDTO } from '../models/user.model';
+import { StrikeDTO } from '../models/strike.model';
 import { CredencialesUserDTO, AuthResponse, User } from '../models/user.model';
 import { jwtDecode } from 'jwt-decode';
 
@@ -19,6 +20,31 @@ export class AuthService {
   
   constructor(private http: HttpClient, private cookieService: CookieService) {
     this.initializeUser();
+  }
+
+  addStrike(): Observable<void> {
+    const token = this.getToken();
+    return this.http.get<void>(`${this.apiUrl}/AddStrike`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+  }
+
+  getStrikesOfYear(): Observable<StrikeDTO[]> {
+    const token = this.getToken();
+    const currentYear = new Date().getFullYear();
+    return this.http.get<StrikeDTO[]>(`${this.apiUrl}/GetStrikesByYear/${currentYear}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+  }
+
+  getStrikesOfMonth(): Observable<StrikeDTO[]> {
+    const token = this.getToken();
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
+    return this.http.get<StrikeDTO[]>(`${this.apiUrl}/GetStrikesByMonth/${currentYear}/${currentMonth}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
   }
 
   getCurrentUser(): UserUpdatingDTO | null {

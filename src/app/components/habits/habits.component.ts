@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { AuthService } from '../../services/auth.service';
 
 interface HabitFilter {
   type: string;
@@ -60,7 +61,8 @@ export class HabitsComponent implements OnInit, OnDestroy {
     private modalService: NgbModal,
     private fb: FormBuilder,
     private router: Router,
-    private pageTitleService: PageTitleService
+    private pageTitleService: PageTitleService,
+    private authService: AuthService
   ) {
     if (this.router.url.includes('habits')) {
       this.pageTitleService.setPageTitle('Hábitos');
@@ -235,21 +237,28 @@ export class HabitsComponent implements OnInit, OnDestroy {
     });
   }
 
-  markAsDone(habitId: number): void {
+  markHabitAsDone(habitId: number): void {
     const habit = this.habits.find(h => h.id === habitId);
-    if (habit) {
-      this.habitService.markHabitAsDone(habitId).subscribe({
-        next: (updated: HabitPreview) => {
-          const index = this.habits.findIndex(h => h.id === habitId);
-          if (index !== -1) {
-            this.habits[index] = updated;
-          }
-        },
-        error: (error: any) => {
-          console.error('Error marking habit as done:', error);
-        }
-      });
+    if (habit && habit.done) {
+      this.authService.addStrike().subscribe();
     }
+    
+    this.habitService.markHabitAsDone(habitId).subscribe({
+      next: (updated: HabitPreview) => {
+        const index = this.habits.findIndex(h => h.id === habitId);
+        if (index !== -1) {
+          this.habits[index] = updated;
+          this.allHabits[index] = updated;
+          const filteredIndex = this.filteredHabits.findIndex(h => h.id === habitId);
+          if (filteredIndex !== -1) {
+            this.filteredHabits[filteredIndex] = updated;
+          }
+        }
+      },
+      error: (error: any) => {
+        console.error('Error marking habit as done:', error);
+      }
+    });
   }
 
   // UI Helpers

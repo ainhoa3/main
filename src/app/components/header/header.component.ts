@@ -2,6 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
+import { MediaMatcher } from '@angular/cdk/layout';
 
 @Component({
   selector: 'app-header',
@@ -17,7 +18,7 @@ import { Router } from '@angular/router';
       Nuevo hábito
     </button>
       <div class="user-info">
-        <div *ngIf="userStreak !== undefined" class="streak-container">
+        <div *ngIf="userStreak !== undefined" class="streak-container" (click)="navigateToStreakMetrics()">
           <span class="streak-icon">🔥</span>
           <span class="streak-count">{{ userStreak }}</span>
         </div>
@@ -57,6 +58,7 @@ import { Router } from '@angular/router';
       border-radius: 4px;
       min-width: 60px;
       justify-content: center;
+      cursor: pointer;
     }
 
     .streak-icon {
@@ -129,6 +131,7 @@ export class HeaderComponent implements OnInit {
   username: string | undefined = undefined;
   usernameInitial: string | undefined = undefined;
   userStreak: number | undefined = undefined;
+  isMobileMenuOpen = false;
 
   constructor(private authService: AuthService, private router: Router) {
     // Initialize user info immediately
@@ -150,11 +153,24 @@ export class HeaderComponent implements OnInit {
       }
     });
   }
+
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+      sidebar.classList.toggle('show-mobile-menu');
+    }
+  }
+
   navigateToCreateTask(): void {
     this.router.navigate(['/create-task']);
   }
 
   navigateToCreateHabit(): void {
     this.router.navigate(['/create-habit']);
+  }
+
+  navigateToStreakMetrics(): void {
+    this.router.navigate(['/streak-metrics']);
   }
 }
