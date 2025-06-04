@@ -1,25 +1,25 @@
 <header class="header">
   <div class="header-content">
-    <div class="mobile-menu-btn">
-      <button class="mobile-menu-btn" (click)="toggleMobileMenu()">
-        <i class="fas fa-bars"></i>
-      </button>
-    </div>
     <div class="header-left">
-      <button class="toggle-sidebar-btn" (click)="toggleSidebarClick()">
+      <button class="toggle-sidebar-btn" (click)="toggleSidebar()">
         <i class="fas fa-bars"></i>
       </button>
       <h1 class="page-title">{{ pageName }}</h1>
     </div>
-    <button class="action-btn" (click)="navigateToCreateTask()">
-      Nueva tarea
-    </button>
-    <button class="action-btn" (click)="navigateToCreateHabit()">
-      Nuevo hábito
-    </button>
-    <button class="action-btn" (click)="navigateToStreakMetrics()">
-      Ver rachas
-    </button>
+    <div class="header-actions">
+      <button class="action-btn" (click)="navigateToCreateTask()">
+        <i class="fas fa-plus"></i>
+        <span class="btn-text">Nueva tarea</span>
+      </button>
+      <button class="action-btn" (click)="navigateToCreateHabit()">
+        <i class="fas fa-plus"></i>
+        <span class="btn-text">Nuevo hábito</span>
+      </button>
+      <button class="action-btn" (click)="navigateToStreakMetrics()">
+        <i class="fas fa-fire"></i>
+        <span class="btn-text">Rachas</span>
+      </button>
+    </div>
     <div class="header-right">
       <div class="user-info">
         <span class="user-name hide-mobile">{{ userName }}</span>

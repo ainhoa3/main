@@ -415,8 +415,12 @@ export class SidebarComponent {
   }
 
   toggleSidebar() {
-    this.collapsed = !this.collapsed;
-    this.toggleCollapse.emit(this.collapsed);
+    if (this.isMobile) {
+      this.showMobileMenu = !this.showMobileMenu;
+    } else {
+      this.collapsed = !this.collapsed;
+      this.toggleCollapse.emit(this.collapsed);
+    }
   }
 
   toggleMobileMenu() {
