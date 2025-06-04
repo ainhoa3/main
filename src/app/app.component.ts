@@ -116,9 +116,11 @@ export class App {
   }
 
   toggleSidebar() {
-    this.isSidebarCollapsed = !this.isSidebarCollapsed;
     if (this.sidebar) {
+      // Delegamos la lógica de alternar la barra lateral al componente Sidebar
       this.sidebar.toggleSidebar();
+      // Actualizamos el estado local basado en el estado del sidebar
+      this.isSidebarCollapsed = this.sidebar.collapsed;
     }
   }
 

@@ -158,10 +158,16 @@ import { MediaMatcher } from '@angular/cdk/layout';
 
       .action-btn {
         padding: 0.5rem;
-        border-radius: 50%;
-        width: 36px;
+        border-radius: 4px;
+        min-width: 36px;
         height: 36px;
         justify-content: center;
+      }
+      
+      /* Asegurar que el botón de rachas sea visible en móviles */
+      .action-btn i.fa-fire {
+        display: inline-block;
+        margin-right: 0;
       }
 
       .page-title {

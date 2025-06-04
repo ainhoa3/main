@@ -423,17 +423,31 @@ export class SidebarComponent {
     }
   }
 
-  toggleMobileMenu() {
-    this.showMobileMenu = !this.showMobileMenu;
-  }
-
-  toggleMobileMenu() {
-    this.showMobileMenu = !this.showMobileMenu;
+  closeMobileMenu() {
+    if (this.isMobile) {
+      this.showMobileMenu = false;
+    }
   }
 
   logout(): void {
     // Call auth service logout method
     this.router.navigate(['/']);
+  }
+
+  resetAllHoverStates(): void {
+    this.isTaskHovered = false;
+    this.isHabitsHovered = false;
+    this.isCalendarHovered = false;
+    this.isSearchHovered = false;
+    this.isSettingsHovered = false;
+    this.isDashboardHovered = false;
+    this.isLogoutHovered = false;
+    this.isMenuHovered = false;
+  }
+
+  // Métodos de hover
+  onMenuHover(isHovered: boolean): void {
+    this.isMenuHovered = isHovered;
   }
 
   onTaskHover(isHovered: boolean): void {
@@ -462,24 +476,5 @@ export class SidebarComponent {
 
   onLogoutHover(isHovered: boolean): void {
     this.isLogoutHovered = isHovered;
-  }
-
-  onMenuHover(isHovered: boolean): void {
-    this.isMenuHovered = isHovered;
-  }
-
-  resetAllHoverStates(): void {
-    this.isTaskHovered = false;
-    this.isHabitsHovered = false;
-    this.isCalendarHovered = false;
-    this.isSearchHovered = false;
-    this.isSettingsHovered = false;
-    this.isDashboardHovered = false;
-    this.isLogoutHovered = false;
-    this.isMenuHovered = false;
-  }
-
-  closeMobileMenu() {
-    this.showMobileMenu = false;
   }
 }
