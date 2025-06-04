@@ -294,26 +294,78 @@ import { MenuIconComponent } from '../../shared/components/menu-icon/menu-icon.c
       background-color: rgba(231, 76, 60, 0.1);
     }
 
+    /* Mobile Menu Button */
+    .mobile-menu-btn {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1100;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
     @media (max-width: 768px) {
+      .mobile-menu-btn {
+        display: flex;
+      }
+
       .sidebar {
-        width: 60px;
+        left: -100%;
+        width: 80%;
+        max-width: 300px;
+        transition: left 0.3s ease-in-out;
+        z-index: 1050;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+      }
+
+      .sidebar.show-mobile-menu {
+        left: 0;
+      }
+
+      .sidebar .text {
+        display: block;
       }
       
-      .text {
-        display: none;
-      }
-      
-      .icon {
-        margin-right: 0;
+      .sidebar .icon {
+        margin-right: 0.75rem;
       }
       
       .logo span {
-        display: none;
+        display: inline;
       }
       
       .logo::after {
-        content: "DF";
-        font-weight: bold;
+        display: none;
+      }
+
+      /* Overlay when mobile menu is open */
+      .mobile-overlay {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+      }
+
+      .show-mobile-menu + .mobile-overlay {
+        opacity: 1;
+        visibility: visible;
       }
     }
   `]
@@ -332,6 +384,7 @@ export class SidebarComponent {
   isLogoutHovered = false;
   isMenuHovered = false;
   isMobile = false;
+  showMobileMenu = false;
 
   constructor(private router: Router) {
     this.checkIfMobile();
@@ -355,12 +408,19 @@ export class SidebarComponent {
     this.isMobile = window.innerWidth < 768;
     if (this.isMobile) {
       this.collapsed = true;
+      this.showMobileMenu = false;
+    } else {
+      this.showMobileMenu = false;
     }
   }
 
   toggleSidebar() {
     this.collapsed = !this.collapsed;
     this.toggleCollapse.emit(this.collapsed);
+  }
+
+  toggleMobileMenu() {
+    this.showMobileMenu = !this.showMobileMenu;
   }
 
   logout(): void {
@@ -409,5 +469,9 @@ export class SidebarComponent {
     this.isDashboardHovered = false;
     this.isLogoutHovered = false;
     this.isMenuHovered = false;
+  }
+
+  closeMobileMenu() {
+    this.showMobileMenu = false;
   }
 }
