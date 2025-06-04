@@ -132,6 +132,13 @@ export class HeaderComponent implements OnInit {
   usernameInitial: string | undefined = undefined;
   userStreak: number | undefined = undefined;
   isMobileMenuOpen = false;
+  currentUser: any = {
+    id: 0,
+    username: '',
+    email: '',
+    streak: 0,
+    preference: ''
+  };
 
   constructor(private authService: AuthService, private router: Router) {
     // Initialize user info immediately
@@ -152,8 +159,23 @@ export class HeaderComponent implements OnInit {
         this.userStreak = user.streak ?? 0;
       }
     });
+    this.loadUserData();
   }
-
+  private loadUserData(): void {
+    
+    this.authService.getCurrentUser$().subscribe({
+      next: (userData) => {
+        this.currentUser = {
+          ...this.currentUser,
+          ...userData,
+          preference: (userData as any).preference || ''
+        };
+       this.username =this.currentUser.username;
+      
+      }
+      
+    });
+  }
   toggleMobileMenu(): void {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
     const sidebar = document.querySelector('.sidebar');
