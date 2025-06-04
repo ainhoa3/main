@@ -46,10 +46,10 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
           </div>
           
           <div class="form-group half">
-            <label for="date">Fecha de entrega</label>
+            <label for="date">Fecha Límite</label>
             <input type="date" id="date" formControlName="date" class="form-control">
             <div *ngIf="taskForm.get('date')?.invalid && (taskForm.get('date')?.dirty || taskForm.get('date')?.touched)" class="error-message">
-              Selecciona una fecha de entrega
+              Selecciona una Fecha Límite
             </div>
           </div>
         </div>

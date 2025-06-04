@@ -36,8 +36,8 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
         <div class="form-group">
           <label for="environment">Entorno</label>
           <select id="environment" formControlName="environment" class="form-control">
-            <option value="0">Trabajo</option>
-            <option value="1">Personal</option>
+            <option value="1">Trabajo</option>
+            <option value="0">Personal</option>
           </select>
           <div *ngIf="habitForm.get('environment')?.invalid && (habitForm.get('environment')?.dirty || habitForm.get('environment')?.touched)" class="error-message">
             Selecciona un entorno
