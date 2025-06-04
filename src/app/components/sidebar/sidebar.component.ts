@@ -427,6 +427,10 @@ export class SidebarComponent {
     this.showMobileMenu = !this.showMobileMenu;
   }
 
+  toggleMobileMenu() {
+    this.showMobileMenu = !this.showMobileMenu;
+  }
+
   logout(): void {
     // Call auth service logout method
     this.router.navigate(['/']);
