@@ -117,11 +117,12 @@ import { MediaMatcher } from '@angular/cdk/layout';
       background-color: var(--primary-color);
       color: white;
       border: none;
-      border-radius: 20px;
+      border-radius: 8px;
       cursor: pointer;
       transition: all 0.2s ease;
       white-space: nowrap;
       font-size: 0.9rem;
+      font-weight: 500;
     }
 
     .action-btn:hover {
