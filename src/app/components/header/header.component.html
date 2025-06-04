@@ -6,6 +6,12 @@
       </button>
       <h1 class="page-title">{{ pageName }}</h1>
     </div>
+    <button class="action-btn" (click)="navigateToCreateTask()">
+      Nueva tarea
+    </button>
+    <button class="action-btn" (click)="navigateToCreateHabit()">
+      Nuevo hábito
+    </button>
     <div class="header-right">
       <div class="user-info">
         <span class="user-name hide-mobile">{{ userName }}</span>

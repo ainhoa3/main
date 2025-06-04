@@ -7,6 +7,46 @@
   box-sizing: border-box;
   overflow: hidden;
 
+  .header {
+    margin-bottom: 1.5rem;
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .header-buttons {
+        display: flex;
+        gap: 1rem;
+
+        .header-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          background-color: white;
+          color: #475569;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+          }
+
+          .header-icon {
+            font-size: 1.2em;
+            line-height: 1;
+          }
+        }
+      }
+    }
+  }
+
   .content-container {
     background: white;
     border-radius: 12px;

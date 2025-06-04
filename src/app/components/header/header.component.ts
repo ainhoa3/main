@@ -1,6 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-header',
@@ -9,6 +10,12 @@ import { AuthService } from '../../services/auth.service';
   template: `
     <header class="header">
       <div class="page-title">{{ pageName }}</div>
+      <button class="action-btn" (click)="navigateToCreateTask()">
+      Nueva tarea
+    </button>
+    <button class="action-btn" (click)="navigateToCreateHabit()">
+      Nuevo hábito
+    </button>
       <div class="user-info">
         <div *ngIf="userStreak !== undefined" class="streak-container">
           <span class="streak-icon">🔥</span>
@@ -81,12 +88,36 @@ import { AuthService } from '../../services/auth.service';
       justify-content: center;
       font-weight: 600;
     }
+    .action-btn {
+      display: flex;
+      gap: 1rem;
+    }
+    .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: 1%;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    justify-content: center;
+}
+
+.action-btn:hover {
+  background-color: var(--primary-dark);
+}
 
     @media (max-width: 768px) {
       .username {
         display: none;
       }
-
+      .action-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
       .page-title {
         font-size: 1.2rem;
       }
@@ -99,7 +130,7 @@ export class HeaderComponent implements OnInit {
   usernameInitial: string | undefined = undefined;
   userStreak: number | undefined = undefined;
 
-  constructor(private authService: AuthService) {
+  constructor(private authService: AuthService, private router: Router) {
     // Initialize user info immediately
     const currentUser = this.authService.getCurrentUser();
     if (currentUser?.username) {
@@ -118,5 +149,12 @@ export class HeaderComponent implements OnInit {
         this.userStreak = user.streak ?? 0;
       }
     });
+  }
+  navigateToCreateTask(): void {
+    this.router.navigate(['/create-task']);
+  }
+
+  navigateToCreateHabit(): void {
+    this.router.navigate(['/create-habit']);
   }
 }
