@@ -10,32 +10,52 @@ import { MediaMatcher } from '@angular/cdk/layout';
   imports: [CommonModule],
   template: `
     <header class="header">
-      <div class="page-title">{{ pageName }}</div>
-      <button class="action-btn" (click)="navigateToCreateTask()">
-      Nueva tarea
-    </button>
-    <button class="action-btn" (click)="navigateToCreateHabit()">
-      Nuevo hábito
-    </button>
-      <div class="user-info">
-        <div *ngIf="userStreak !== undefined" class="streak-container" (click)="navigateToStreakMetrics()">
-          <span class="streak-icon">🔥</span>
-          <span class="streak-count">{{ userStreak }}</span>
+      <div class="header-content">
+        <div class="page-title">{{ pageName }}</div>
+        <div class="header-actions">
+          <button class="action-btn" (click)="navigateToCreateTask()">
+            Nueva tarea
+          </button>
+          <button class="action-btn" (click)="navigateToCreateHabit()">
+            Nuevo hábito
+          </button>
+          <div class="user-info">
+            <div *ngIf="userStreak !== undefined" class="streak-container" (click)="navigateToStreakMetrics()">
+              <span class="streak-icon">🔥</span>
+              <span class="streak-count">{{ userStreak }}</span>
+            </div>
+            <div *ngIf="username !== undefined" class="username">{{ username }}</div>
+            <div *ngIf="usernameInitial !== undefined" class="avatar">{{ usernameInitial }}</div>
+          </div>
         </div>
-        <div *ngIf="username !== undefined" class="username">{{ username }}</div>
-        <div *ngIf="usernameInitial !== undefined" class="avatar">{{ usernameInitial }}</div>
       </div>
     </header>
   `,
   styles: [`
     .header {
+      width: 100%;
+      background-color: white;
+      border-bottom: 1px solid var(--border-color);
+      min-height: 70px;
+      position: relative;
+      z-index: 100;
+    }
+
+    .header-content {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 1rem 1.5rem;
-      background-color: white;
-      border-bottom: 1px solid var(--border-color);
-      min-height: 70px;
+      max-width: 1400px;
+      margin: 0 auto;
+      height: 100%;
+      width: 100%;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
     }
 
     .page-title {
@@ -72,8 +92,6 @@ import { MediaMatcher } from '@angular/cdk/layout';
       color: var(--warning-color, #ff4444);
     }
 
-
-
     .username {
       margin-right: 0.75rem;
       font-weight: 500;
@@ -90,38 +108,60 @@ import { MediaMatcher } from '@angular/cdk/layout';
       justify-content: center;
       font-weight: 600;
     }
-    .action-btn {
-      display: flex;
-      gap: 1rem;
-    }
-    .action-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: 1%;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: var(--border-radius-sm);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    justify-content: center;
-}
 
-.action-btn:hover {
-  background-color: var(--primary-dark);
-}
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      font-size: 0.9rem;
+    }
+
+    .action-btn:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .action-btn:active {
+      transform: translateY(0);
+    }
 
     @media (max-width: 768px) {
+      .header-content {
+        padding: 0.5rem 1rem;
+        justify-content: flex-end;
+      }
+
+      .page-title {
+        display: none;
+      }
+
       .username {
         display: none;
       }
-      .action-buttons {
-        flex-direction: column;
-        gap: 0.5rem;
+
+      .action-btn {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.85rem;
       }
-      .page-title {
-        font-size: 1.2rem;
+
+      .avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 0.9rem;
+      }
+
+      .streak-container {
+        margin-right: 1rem;
+        min-width: 50px;
+        padding: 0.25rem 0.6rem;
       }
     }
   `]
