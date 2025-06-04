@@ -8,7 +8,7 @@ import { Task, TaskCreatingDTO, TaskUpdatingDTO, TaskPreview } from '../models/t
   providedIn: 'root'
 })
 export class TaskService {
-  private apiUrl = 'http://localhost:5112/DailyFlow/api/Tasks';
+  private apiUrl = 'https://dailyflowapi-d6ged4dtbrdbh0d6.spaincentral-01.azurewebsites.net/DailyFlow/api/Tasks';
   
   constructor(private http: HttpClient, private authService: AuthService) { }
 
