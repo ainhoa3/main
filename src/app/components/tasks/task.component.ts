@@ -34,7 +34,7 @@ import { ExtraTasksComponent } from '../tasks/extra-tasks/extra-tasks.component'
     
     .dashboard-content {
       padding: 2rem;
-      margin-left: 250px;
+      
       min-height: calc(100vh - 70px);
     }
 
@@ -50,11 +50,12 @@ import { ExtraTasksComponent } from '../tasks/extra-tasks/extra-tasks.component'
       box-shadow: var(--shadow-md);
       overflow: hidden;
       min-height: 400px;
+      padding: 1rem;
     }
 
     @media (max-width: 768px) {
       .dashboard-content {
-        margin-left: 60px;
+        
         padding: 1rem;
       }
 

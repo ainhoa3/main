@@ -207,69 +207,90 @@ import { faUser, faLock, faEnvelope, faArrowRight, faEye, faEyeSlash, faCheck, f
       flex-direction: column;
     }
 
+    /* Header Styles */
     .header {
       display: flex;
+      flex-direction: column;
       justify-content: space-between;
       align-items: center;
-      padding: 1.5rem;
+      padding: 1rem;
       background-color: white;
       box-shadow: var(--shadow-sm);
+      gap: 1rem;
     }
 
     .logo {
-      font-size: 1.8rem;
+      font-size: var(--font-size-3xl);
       font-weight: 700;
       color: var(--primary-color);
+      margin: 0;
     }
 
     .nav-buttons {
       display: flex;
-      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+      width: 100%;
     }
 
+    /* Main Content */
     .main-content {
       flex: 1;
-      padding: 2rem 1.5rem;
+      padding: 1.5rem 1rem;
     }
 
+    /* Hero Section */
     .hero {
       max-width: 800px;
-      margin: 3rem auto 5rem;
+      margin: 2rem auto 3rem;
       text-align: center;
+      padding: 0 1rem;
     }
 
     .hero h1 {
-      font-size: 2.5rem;
+      font-size: var(--font-size-3xl);
       margin-bottom: 1rem;
       color: var(--text-color);
+      line-height: 1.2;
     }
 
     .hero p {
-      font-size: 1.2rem;
+      font-size: var(--font-size-lg);
       color: var(--text-secondary);
       margin-bottom: 2rem;
+      line-height: 1.6;
     }
 
     .hero-cta {
-      padding: 0.75rem 2rem;
-      font-size: 1.1rem;
+      padding: 0.75rem 1.5rem;
+      font-size: var(--font-size-base);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
+    /* Features Section */
     .features {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 2rem;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
       max-width: 1200px;
       margin: 0 auto;
+      padding: 0 1rem;
     }
 
     .feature-card {
       background-color: white;
       border-radius: var(--border-radius-md);
-      padding: 2rem;
+      padding: 1.5rem;
       text-align: center;
       box-shadow: var(--shadow-md);
       transition: transform 0.3s ease, box-shadow 0.3s ease;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .feature-card:hover {
@@ -278,25 +299,83 @@ import { faUser, faLock, faEnvelope, faArrowRight, faEye, faEyeSlash, faCheck, f
     }
 
     .feature-icon {
-      font-size: 3rem;
+      font-size: 2.5rem;
       margin-bottom: 1rem;
+      color: var(--primary-color);
     }
 
     .feature-card h3 {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
+      font-size: var(--font-size-xl);
+      margin-bottom: 0.75rem;
+      color: var(--text-color);
     }
 
     .feature-card p {
       color: var(--text-secondary);
+      margin: 0;
+      font-size: var(--font-size-base);
+      line-height: 1.6;
     }
 
+    /* Footer */
     .footer {
       background-color: var(--text-color);
       color: white;
       text-align: center;
-      padding: 1.5rem;
+      padding: 1.5rem 1rem;
       margin-top: auto;
+      font-size: var(--font-size-sm);
+    }
+
+    /* Tablet Styles */
+    @media (min-width: 640px) {
+      .header {
+        flex-direction: row;
+        padding: 1rem 1.5rem;
+      }
+
+      .nav-buttons {
+        width: auto;
+        justify-content: flex-end;
+      }
+
+      .hero {
+        margin: 3rem auto 4rem;
+      }
+
+      .hero h1 {
+        font-size: var(--font-size-4xl);
+      }
+
+      .features {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+      }
+    }
+
+    /* Desktop Styles */
+    @media (min-width: 1024px) {
+      .main-content {
+        padding: 2rem 1.5rem;
+      }
+
+      .hero {
+        margin: 4rem auto 5rem;
+      }
+
+      .hero h1 {
+        font-size: 3rem;
+      }
+
+      .features {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        padding: 0 2rem;
+      }
+
+      .feature-card {
+        padding: 2rem;
+      }
     }
 
     .close-btn {

@@ -45,7 +45,7 @@ import { HabitService } from '../../services/habit.service';
     
     .dashboard-content {
       padding: 2rem;
-      margin-left: 250px;
+     
       min-height: calc(100vh - 70px);
     }
 
@@ -84,7 +84,7 @@ import { HabitService } from '../../services/habit.service';
 
     @media (max-width: 768px) {
       .dashboard-content {
-        margin-left: 60px;
+        
         padding: 1rem;
       }
 

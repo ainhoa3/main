@@ -16,9 +16,20 @@ import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
     <div class="today-tasks-container">
       <h2 class="section-title">Tareas de Hoy</h2>
       <div class="tasks-filters">
-        <button class="btn btn-filter" (click)="filterEnvironment(WORK_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === WORK_ENVIRONMENT}">Trabajo</button>
-        <button class="btn btn-filter" (click)="filterEnvironment(PERSONAL_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === PERSONAL_ENVIRONMENT}">Personal</button>
-        <button class="btn btn-filter" (click)="clearFilter()" [ngClass]="{'selected': currentFilter === null}">Todos</button>
+        <div class="filters-container">
+          <button class="btn btn-filter" (click)="filterEnvironment(WORK_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === WORK_ENVIRONMENT}">
+            <span class="filter-icon">💼</span>
+            <span class="filter-text">Trabajo</span>
+          </button>
+          <button class="btn btn-filter" (click)="filterEnvironment(PERSONAL_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === PERSONAL_ENVIRONMENT}">
+            <span class="filter-icon">🏠</span>
+            <span class="filter-text">Personal</span>
+          </button>
+          <button class="btn btn-filter" (click)="clearFilter()" [ngClass]="{'selected': currentFilter === null}">
+            <span class="filter-icon">📋</span>
+            <span class="filter-text">Todos</span>
+          </button>
+        </div>
       </div>
       <div class="tasks-container">
         <div class="tasks-list" *ngIf="filteredTasks.length > 0">
@@ -61,16 +72,66 @@ import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
       (taskDeleted)="taskDeleted()"
     ></app-task-detail>
   `,
-  styles: [`.today-tasks-container {
-    padding: 1rem;
+  styles: [`.today-tasks-container:host {
+    display: flex;
+    flex-direction: column;
     height: 100%;
-    overflow-y: auto;
+    overflow: hidden;
   }
 
-  .section-title {
+  .tasks-filters {
     margin-bottom: 1rem;
-    font-size: 1.2rem;
+  }
+
+  .filters-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .btn-filter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.5rem;
+    background-color: transparent;
+    border: 1px solid var(--border-color);
     color: var(--text-color);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-filter:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  .btn-filter.selected {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+  }
+
+  @media (min-width: 768px) {
+    .filters-container {
+      flex-direction: row;
+      flex-wrap: nowrap;
+    }
+    
+    .btn-filter {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  .tasks-container {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    margin-right: -0.5rem;
   }
 
   .tasks-list {
@@ -218,6 +279,30 @@ import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
     background-color: #2ecc71;
     color: white;
   }
+
+  .filter-icon {
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+  }
+
+  .filter-text {
+    font-size: 0.9rem;
+  }
+
+  .filters-container {
+    display: flex;
+    
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .btn-filter {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+  }
 `]
 })
 export class TodayTasksComponent implements OnInit {
@@ -331,18 +416,13 @@ export class TodayTasksComponent implements OnInit {
   }
 
   taskUpdated(): void {
-    // Update local state using the selectedTaskId
-    if (this.selectedTaskId) {
-      this.loadTasks();
-    }
+    // Refresh the task list to get the latest data
+    this.loadTasks();
   }
 
   taskDeleted(): void {
-    // Remove from local state using the selectedTaskId
-    if (this.selectedTaskId) {
-      this.allTasks = this.allTasks.filter(task => task.id !== this.selectedTaskId);
-      this.applyFilter();
-      this.closeTaskDetail();
-    }
+    // Close the detail view and refresh the task list
+    this.closeTaskDetail();
+    this.loadTasks();
   }
 }
