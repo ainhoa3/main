@@ -1,15 +1,19 @@
-import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { StrikeDTO } from '../../models/strike.model';
-import { Chart } from 'chart.js';
-import { Observable, forkJoin } from 'rxjs';
+import { Chart, ChartConfiguration, registerables } from 'chart.js';
+import { Subject, takeUntil } from 'rxjs';
 import { SpinnerComponent } from '../../shared/spinner/spinner.component';
+import { StreakTimelineComponent } from '../streak-timeline/streak-timeline.component';
+
+// Registrar todos los componentes de Chart.js
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-streak-metrics',
   standalone: true,
-  imports: [CommonModule, SpinnerComponent],
+  imports: [CommonModule, SpinnerComponent, StreakTimelineComponent],
   template: `
     <div class="streak-metrics-container">
       <app-spinner *ngIf="loading"></app-spinner>
@@ -28,23 +32,33 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
           <p>{{currentStreak || 0}} días</p>
         </div>
         <div class="stat-item">
-          <h3>Máxima racha</h3>
-          <p>{{maxStreak || 0}} días</p>
+          <h3>Máxima racha (año)</h3>
+          <p>{{maxYearlyStreak || 0}} días</p>
         </div>
         <div class="stat-item">
-          <h3>Racha media</h3>
-          <p>{{averageStreak || 0}} días</p>
+          <h3>Máxima racha (mes)</h3>
+          <p>{{maxMonthlyStreak || 0}} días</p>
+        </div>
+        <div class="stat-item">
+          <h3>Media mensual</h3>
+          <p>{{monthlyAverage.toFixed(1) || 0}} días</p>
+        </div>
+        <div class="stat-item">
+          <h3>Media anual</h3>
+          <p>{{yearlyAverage.toFixed(1) || 0}} días</p>
         </div>
       </div>
 
       <div class="chart-container">
-        <canvas #chartCanvas>
-        </canvas>
+        <canvas #chartCanvas></canvas>
       </div>
+      
+      <!-- Línea de tiempo de rachas -->
+      <app-streak-timeline [monthlyStrikes]="monthlyStrikes"></app-streak-timeline>
     </div>
   `,
-  styles: [`
-    .streak-metrics-container {
+  styles: [
+    `.streak-metrics-container {
       width: 100%;
       max-width: 1200px;
       margin: 0 auto;
@@ -173,154 +187,296 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
     }
   `]
 })
-export class StreakMetricsComponent implements OnInit {
-  view = 'year';
-  strikes: StrikeDTO[] = [];
+export class StreakMetricsComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('chartCanvas') private chartCanvas!: ElementRef<HTMLCanvasElement>;
+  private chart: Chart | null = null;
+  private destroy$ = new Subject<void>();
+
+  view: 'year' | 'month' = 'month';
+  loading = true;
+
   currentStreak = 0;
   maxStreak = 0;
   averageStreak = 0;
-  chart: Chart | null = null;
-  chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Días de racha'
-        }
-      },
-      x: {
-        title: {
-          display: true,
-          text: 'Fecha'
-        }
-      }
+  maxMonthlyStreak = 0;
+  maxYearlyStreak = 0;
+  monthlyAverage = 0;
+  yearlyAverage = 0;
+
+  monthlyStrikes: StrikeDTO[] = [];
+  yearlyStrikes: StrikeDTO[] = [];
+
+  constructor(private authService: AuthService) {}
+
+  ngOnInit(): void {
+    this.loadMonthlyStrikes();
+    this.loadYearlyStrikes();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    if (this.chart) {
+      this.chart.destroy();
     }
-  };
-  chartData = {
-    labels: [] as string[],
-    datasets: [{
-      label: 'Racha diaria',
-      data: [] as number[],
-      borderColor: '#007bff',
-      tension: 0.4,
-      fill: false
-    }]
-  };
+  }
 
-  @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
-  loading = true;
-
-  constructor(private authService: AuthService) {
-    this.loadMetrics();
+  ngAfterViewInit(): void {
+    this.initChart();
   }
 
   setView(view: 'year' | 'month'): void {
     this.view = view;
-    this.loadMetrics();
+    this.updateChart();
   }
 
-  ngAfterViewInit() {
-    if (this.chartCanvas) {
-      this.chart = new Chart(this.chartCanvas.nativeElement, {
-        type: 'line',
-        data: this.chartData,
-        options: this.chartOptions
-      });
-    }
-  }
+  private initChart(): void {
+    const ctx = this.chartCanvas.nativeElement.getContext('2d');
+    if (!ctx) return;
 
-  ngOnInit(): void {
-    this.loadMetrics();
-  }
-
-  loadMetrics(): void {
-    this.loading = true;
-    const obs = this.view === 'year' 
-      ? this.authService.getStrikesOfYear() 
-      : this.authService.getStrikesOfMonth();
-
-    obs.subscribe({
-      next: (strikes) => {
-        this.strikes = strikes;
-        this.calculateMetrics();
-        this.updateChart();
-        this.loading = false;
+    this.chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Media mensual de racha',
+          data: [],
+          backgroundColor: '#007bff',
+          borderColor: '#007bff',
+          borderWidth: 1
+        }]
       },
-      error: (error) => {
-        console.error('Error loading streak metrics:', error);
-        this.loading = false;
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true
+          },
+          tooltip: {
+            callbacks: {
+              label: (context: any) => `Media: ${context.raw.toFixed(1)} días`
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Días de racha'
+            },
+            ticks: {
+              precision: 1
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Mes'
+            }
+          }
+        }
       }
     });
   }
 
-  private calculateMetrics(): void {
-    if (!this.strikes.length) return;
+  private updateChart(): void {
+    if (!this.yearlyStrikes?.length) {
+      this.clearChart();
+      return;
+    }
 
-    // Ordenar strikes por fecha
-    this.strikes.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const { labels, averages } = this.calculateMonthlyAverages();
+
+    if (this.chart) {
+      this.chart.data.labels = labels;
+      this.chart.data.datasets[0].data = averages;
+      this.chart.update();
+    }
+  }
+
+  private clearChart(): void {
+    if (this.chart) {
+      this.chart.data.labels = [];
+      this.chart.data.datasets[0].data = [];
+      this.chart.update();
+    }
+  }
+
+  private resetMetrics(): void {
+    this.currentStreak = 0;
+    this.maxStreak = 0;
+    this.averageStreak = 0;
+  }
+
+  private calculateMonthlyAverages(): { labels: string[], averages: number[] } {
+    if (!this.yearlyStrikes?.length) {
+      this.resetMetrics();
+      return { labels: [], averages: [] };
+    }
+
+    const sortedStrikes = [...this.yearlyStrikes].sort((a: StrikeDTO, b: StrikeDTO) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    const monthlyAverages: { [key: string]: { total: number; count: number; max: number } } = {};
+    let currentYearlyStreak = 0;
+    let maxYearlyStreak = 0;
+    let yearlyTotal = 0;
+    let yearlyCount = 0;
+    let lastDate: Date | null = null;
+    const oneDay = 24 * 60 * 60 * 1000;
+
+    // Calcular rachas mensuales y anuales
+    for (const strike of sortedStrikes) {
+      const date = new Date(strike.date);
+      const month = date.getMonth();
+      const year = date.getFullYear();
+      const monthKey = `${year}-${month}`;
+
+      // Calcular racha mensual
+      if (!monthlyAverages[monthKey]) {
+        monthlyAverages[monthKey] = { total: 0, count: 0, max: 0 };
+        currentYearlyStreak = 0; // Reiniciar racha mensual
+      }
+      
+      if (lastDate) {
+        const diffDays = Math.round(Math.abs((date.getTime() - lastDate.getTime()) / oneDay));
+        if (diffDays === 1) {
+          currentYearlyStreak++;
+        } else {
+          currentYearlyStreak = 1;
+        }
+      } else {
+        currentYearlyStreak = 1;
+      }
+      
+      monthlyAverages[monthKey].max = Math.max(monthlyAverages[monthKey].max, currentYearlyStreak);
+      maxYearlyStreak = Math.max(maxYearlyStreak, currentYearlyStreak);
+      
+      // Actualizar estadísticas mensuales
+      monthlyAverages[monthKey].total += strike.streak;
+      monthlyAverages[monthKey].count++;
+      
+      // Actualizar estadísticas anuales
+      yearlyTotal += strike.streak;
+      yearlyCount++;
+      
+      lastDate = date;
+    }
+
+    // Calcular promedios y preparar datos para el gráfico
+    const labels: string[] = [];
+    const averages: number[] = [];
+    let maxMonthlyStreak = 0;
+    let monthlyAverage = 0;
+
+    // Ordenar los meses
+    const sortedMonths = Object.keys(monthlyAverages).sort();
+    
+    for (const monthKey of sortedMonths) {
+      const [year, month] = monthKey.split('-');
+      const monthName = new Date(parseInt(year), parseInt(month)).toLocaleString('es-ES', { month: 'long' });
+      labels.push(`${monthName} ${year}`);
+      
+      const { total, count, max } = monthlyAverages[monthKey];
+      const average = count > 0 ? total / count : 0;
+      averages.push(average);
+      
+      // Actualizar métricas mensuales
+      maxMonthlyStreak = Math.max(maxMonthlyStreak, max);
+      monthlyAverage += average;
+    }
+
+    // Calcular promedio mensual
+    monthlyAverage = sortedMonths.length > 0 ? monthlyAverage / sortedMonths.length : 0;
+    // Calcular promedio anual
+    this.yearlyAverage = yearlyCount > 0 ? yearlyTotal / yearlyCount : 0;
+
+    // Actualizar propiedades del componente
+    this.maxMonthlyStreak = maxMonthlyStreak;
+    this.maxYearlyStreak = maxYearlyStreak;
+    this.monthlyAverage = monthlyAverage;
+
+    return { labels, averages };
+  }
+
+  private calculateYearlyMetrics(): void {
+    if (!this.yearlyStrikes?.length) {
+      this.resetMetrics();
+      return;
+    }
+
+    const sortedStrikes = [...this.yearlyStrikes].sort((a: StrikeDTO, b: StrikeDTO) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
 
     let currentStreak = 0;
     let maxStreak = 0;
-    let streakSum = 0;
-    let streakCount = 0;
-    let lastDate = null;
+    const streaks: number[] = [];
+    let lastDate: Date | null = null;
+    const oneDay = 24 * 60 * 60 * 1000; // milisegundos en un día
 
-    for (const strike of this.strikes) {
+    for (const strike of sortedStrikes) {
       const currentDate = new Date(strike.date);
       
       if (lastDate) {
-        const daysDiff = Math.floor((currentDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+        const diffDays = Math.round(Math.abs((currentDate.getTime() - lastDate.getTime()) / oneDay));
         
-        if (daysDiff === 1) {
+        if (diffDays === 1) {
           currentStreak++;
-        } else {
-          if (currentStreak > 0) {
-            maxStreak = Math.max(maxStreak, currentStreak);
-            streakSum += currentStreak;
-            streakCount++;
-          }
+          maxStreak = Math.max(maxStreak, currentStreak);
+        } else if (diffDays > 1) {
+          streaks.push(currentStreak);
           currentStreak = 1;
         }
       } else {
         currentStreak = 1;
       }
+      
       lastDate = currentDate;
     }
 
-    // Si la última racha está activa
-    if (currentStreak > 0) {
+    if (sortedStrikes.length > 0) {
+      streaks.push(currentStreak);
       maxStreak = Math.max(maxStreak, currentStreak);
-      this.currentStreak = currentStreak;
-      streakSum += currentStreak;
-      streakCount++;
     }
 
+    this.currentStreak = currentStreak;
     this.maxStreak = maxStreak;
-    this.averageStreak = streakCount > 0 ? Math.round(streakSum / streakCount) : 0;
+    this.averageStreak = streaks.length > 0 
+      ? Math.round((streaks.reduce((sum: number, days: number) => sum + days, 0) / streaks.length) * 10) / 10 
+      : 0;
   }
 
-  private updateChart(): void {
-    if (!this.strikes.length) return;
+  private loadMonthlyStrikes(): void {
+    this.authService.getStrikesOfMonth()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (strikes: StrikeDTO[]) => {
+          this.monthlyStrikes = strikes;
+          this.updateChart();
+        },
+        error: (error: any) => {
+          console.error('Error loading monthly strikes:', error);
+        }
+      });
+  }
 
-    const dates: string[] = [];
-    const streaks: number[] = [];
-
-    this.strikes.forEach(strike => {
-      const date = new Date(strike.date);
-      dates.push(this.view === 'year' 
-        ? `${date.getFullYear()}-${date.getMonth() + 1}`
-        : `${date.getDate()}/${date.getMonth() + 1}`);
-      streaks.push(strike.streak);
-    });
-
-    this.chartData.labels = dates;
-    this.chartData.datasets[0].data = streaks;
-
-    if (this.chart) {
-      this.chart.update();
-    }
+  private loadYearlyStrikes(): void {
+    this.authService.getStrikesOfYear()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (strikes: StrikeDTO[]) => {
+          this.yearlyStrikes = strikes;
+          this.calculateYearlyMetrics();
+          this.updateChart();
+          this.loading = false;
+        },
+        error: (error: any) => {
+          console.error('Error loading yearly strikes:', error);
+        }
+      });
   }
 }
