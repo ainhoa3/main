@@ -22,9 +22,9 @@ export class AuthService {
     this.initializeUser();
   }
 
-  addStrike(): Observable<void> {
+  addStrike(): Observable<any> {
     const token = this.getToken();
-    return this.http.get<void>(`${this.apiUrl}/AddStrike`, {
+    return this.http.get<any>(`${this.apiUrl}/AddStrike`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
   }

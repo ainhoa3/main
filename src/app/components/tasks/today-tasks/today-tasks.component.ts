@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TaskDetailComponent } from '../task-detail/task-detail.component';
 import { SpinnerComponent } from '../../shared/spinner/spinner.component';
 import { TaskService } from '../../../services/task.service';
+import { AuthService } from '../../../services/auth.service';
 import { Task, TaskPreview, TaskUpdatingDTO, WORK_ENVIRONMENT, PERSONAL_ENVIRONMENT } from '../../../models/task.model';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
@@ -318,7 +319,8 @@ export class TodayTasksComponent implements OnInit {
   loading = false;
 
   constructor(
-    @Inject(TaskService) private taskService: TaskService
+    @Inject(TaskService) private taskService: TaskService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -378,6 +380,19 @@ export class TodayTasksComponent implements OnInit {
           if (taskIndex !== -1) {
             this.filteredTasks[taskIndex].done = true;
           }
+          
+          // Call addStrike after marking task as done
+          this.authService.addStrike().subscribe({
+            next: (response) => {
+              if (response && response.streak && response.date) {
+                alert(`¡Enhorabuena! Completaste tus tareas de hoy. Racha: ${response.streak} días`);
+              }
+            },
+            error: (error) => {
+              console.error('Error adding strike:', error);
+            }
+          });
+          
           // Add a small delay before refreshing to ensure local state update is completed
           setTimeout(() => {
             this.loadTasks(); // Refresh the list
