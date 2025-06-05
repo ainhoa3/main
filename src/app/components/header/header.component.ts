@@ -182,11 +182,12 @@ export class HeaderComponent implements OnInit {
 
   constructor(private authService: AuthService, private router: Router) {
     // Initialize user info immediately
-    const currentUser = this.authService.getCurrentUser();
-    if (currentUser?.username) {
-      this.username = currentUser.username;
-      this.usernameInitial = currentUser.username.charAt(0).toUpperCase();
-    }
+    this.authService.getCurrentUser().subscribe(user => {
+      if (user?.username) {
+        this.username = user.username;
+        this.usernameInitial = user.username.charAt(0).toUpperCase();
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -201,18 +202,15 @@ export class HeaderComponent implements OnInit {
     this.loadUserData();
   }
   private loadUserData(): void {
-    
-    this.authService.getCurrentUser$().subscribe({
+    this.authService.getCurrentUser().subscribe({
       next: (userData) => {
         this.currentUser = {
           ...this.currentUser,
           ...userData,
           preference: (userData as any).preference || ''
         };
-       this.username =this.currentUser.username;
-      
+        this.username = this.currentUser.username;
       }
-      
     });
   }
   toggleMobileMenu(): void {

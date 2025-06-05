@@ -7,18 +7,23 @@ import { UserUpdatingDTO } from '../models/user.model';
 import { StrikeDTO } from '../models/strike.model';
 import { CredencialesUserDTO, AuthResponse, User } from '../models/user.model';
 import { jwtDecode } from 'jwt-decode';
+import { CacheService } from './cache.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'https://dailyflowapi-d6ged4dtbrdbh0d6.spaincentral-01.azurewebsites.net/DailyFlow/api/users';
+  private apiUrl = 'http://localhost:5112/DailyFlow/api/users';
   private tokenKey = 'auth_token';
   private currentUserSubject = new BehaviorSubject<UserUpdatingDTO | null>(null);
   
   currentUser$ = this.currentUserSubject.asObservable();
   
-  constructor(private http: HttpClient, private cookieService: CookieService) {
+  constructor(
+    private http: HttpClient, 
+    private cookieService: CookieService,
+    private cacheService: CacheService
+  ) {
     this.initializeUser();
   }
 
@@ -47,8 +52,8 @@ export class AuthService {
     });
   }
 
-  getCurrentUser(): UserUpdatingDTO | null {
-    return this.currentUserSubject.value;
+  getCurrentUser(): Observable<UserUpdatingDTO | null> {
+    return this.currentUser$;
   }
 
   private initializeUser(): void {
@@ -68,6 +73,7 @@ export class AuthService {
           this.getUserStreak().subscribe(streak => {
             const updatedUser = { ...user, streak };
             this.currentUserSubject.next(updatedUser);
+            this.cacheService.setUser(updatedUser);
           });
         }
       } catch (error) {
@@ -116,26 +122,18 @@ export class AuthService {
   }
 
   getUserStreak(): Observable<number> {
+    const cachedUser = this.cacheService.getUser();
+    if (cachedUser) {
+      return new Observable<number>(observer => {
+        observer.next(cachedUser.streak);
+        observer.complete();
+      });
+    }
+
     const token = this.getToken();
     return this.http.get<number>(`${this.apiUrl}/streak`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
-  }
-
-  getCurrentUser$(): Observable<UserUpdatingDTO> {
-    const token = this.getToken();
-    if (!token) {
-      return new Observable<UserUpdatingDTO>((subscriber) => {
-        subscriber.error('No token available');
-      });
-    }
-    return this.http.get<UserUpdatingDTO>(`${this.apiUrl}/GetCurrentUser`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    }).pipe(
-      tap((user) => {
-        this.currentUserSubject.next(user);
-      })
-    );
   }
 
   addStreak(): Observable<number> {
@@ -202,6 +200,13 @@ export class AuthService {
   }
 
   logout(): void {
+    // Clear token cookie
     this.cookieService.deleteCookie(this.tokenKey);
+    
+    // Clear localStorage
+    localStorage.clear();
+    
+    // Clear current user subject
+    this.currentUserSubject.next(null);
   }
 }

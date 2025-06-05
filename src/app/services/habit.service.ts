@@ -1,16 +1,23 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from './auth.service';
-import { Observable, map } from 'rxjs';
+import { Observable, map, tap } from 'rxjs';
 import { Habit, HabitCreatingDTO, HabitUpdatingDTO, HabitPreview } from '../models/habit.model';
+import { AnimationService } from './animation.service';
+import { CacheService } from './cache.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class HabitService {
-  private apiUrl = 'https://dailyflowapi-d6ged4dtbrdbh0d6.spaincentral-01.azurewebsites.net/DailyFlow/api/Habits';
+  private apiUrl = 'http://localhost:5112/DailyFlow/api/Habits';
 
-  constructor(private http: HttpClient, private authService: AuthService) { }
+  constructor(
+    private http: HttpClient, 
+    private authService: AuthService,
+    private animationService: AnimationService,
+    private cacheService: CacheService
+  ) { }
 
   // Create a new habit
   createHabit(habit: HabitCreatingDTO): Observable<Habit> {
@@ -22,6 +29,14 @@ export class HabitService {
 
   // Get habits of the day preview
   getHabitsOfTheDayPreview(): Observable<HabitPreview[]> {
+    const cachedHabits = this.cacheService.getHabitsOfTheDay();
+    if (cachedHabits) {
+      return new Observable<HabitPreview[]>(observer => {
+        observer.next(cachedHabits);
+        observer.complete();
+      });
+    }
+
     const token = this.authService.getToken();
     return this.http.get<any[]>(`${this.apiUrl}/GetHabitsOfTheDayPreview`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -29,12 +44,24 @@ export class HabitService {
       map(habits => habits.map(habit => ({
         ...habit,
         environment: habit._Environment === 'work' ? 1 : 0
-      })))
+      }))
+    ),
+    tap(habits => {
+      this.cacheService.setHabitsOfTheDay(habits);
+    })
     );
   }
 
   // Get a specific habit
   getHabit(id: number): Observable<Habit> {
+    const cachedHabit = this.cacheService.getHabit(id);
+    if (cachedHabit) {
+      return new Observable<Habit>(observer => {
+        observer.next(cachedHabit);
+        observer.complete();
+      });
+    }
+
     const token = this.authService.getToken();
     return this.http.get<any>(`${this.apiUrl}/GetAHabit/${id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
@@ -42,7 +69,10 @@ export class HabitService {
       map(habit => ({
         ...habit,
         environment: habit._Environment === 'work' ? 1 : 0
-      }))
+      })),
+      tap(habit => {
+        this.cacheService.setHabit(id, habit);
+      })
     );
   }
 
@@ -51,7 +81,13 @@ export class HabitService {
     const token = this.authService.getToken();
     return this.http.put<HabitPreview>(`${this.apiUrl}/MarkHabitAsDone/${habitId}`, null, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      tap((habit: HabitPreview) => {
+        if (habit.date && habit.streak) {
+          this.animationService.showFire({ date: habit.date, streak: habit.streak });
+        }
+      })
+    );
   }
 
   // Search habits by keyword
@@ -63,7 +99,14 @@ export class HabitService {
       map(habits => habits.map(habit => ({
         ...habit,
         environment: habit._Environment === 'work' ? 1 : 0
-      })))
+      }))
+    ),
+    tap(habits => {
+      // Cache each habit individually
+      habits.forEach(habit => {
+        this.cacheService.setHabit(habit.id, habit);
+      });
+    })
     );
   }
 

@@ -1,16 +1,23 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from './auth.service';
-import { Observable } from 'rxjs';
+import { Observable, map, tap } from 'rxjs';
 import { Task, TaskCreatingDTO, TaskUpdatingDTO, TaskPreview } from '../models/task.model';
+import { AnimationService } from './animation.service';
+import { CacheService } from './cache.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TaskService {
-  private apiUrl = 'https://dailyflowapi-d6ged4dtbrdbh0d6.spaincentral-01.azurewebsites.net/DailyFlow/api/Tasks';
+  private apiUrl = 'http://localhost:5112/DailyFlow/api/Tasks';
   
-  constructor(private http: HttpClient, private authService: AuthService) { }
+  constructor(
+    private http: HttpClient, 
+    private authService: AuthService,
+    private animationService: AnimationService,
+    private cacheService: CacheService
+  ) { }
 
   // Create a new task
   createTask(task: TaskCreatingDTO): Observable<Task> {
@@ -22,18 +29,71 @@ export class TaskService {
 
   // Get tasks of the day preview
   getTasksOfTheDayPreview(): Observable<TaskPreview[]> {
+    const cachedTasks = this.cacheService.getTasksOfTheDay();
+    if (cachedTasks) {
+      return new Observable<TaskPreview[]>(observer => {
+        observer.next(cachedTasks);
+        observer.complete();
+      });
+    }
+
     const token = this.authService.getToken();
     return this.http.get<TaskPreview[]>(`${this.apiUrl}/GetTasksOfTheDayPreview`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      tap(tasks => {
+        // Cache each task preview
+        tasks.forEach(taskPreview => {
+          this.cacheService.setTask(taskPreview.id, {
+            id: taskPreview.id,
+            title: taskPreview.title,
+            description: taskPreview.description,
+            environment: taskPreview.environment,
+            dueDate: taskPreview.dueDate,
+            importance: taskPreview.importance,
+            done: false,
+            priority: 0,
+            scheduled: taskPreview.dueDate !== null,
+            date: taskPreview.dueDate ? taskPreview.dueDate.toISOString().split('T')[0] : null,
+            streak: 0
+          });
+        });
+        this.cacheService.setTasksOfTheDay(tasks);
+      })
+    );
   }
 
   // Get a specific task
   getTask(id: number): Observable<Task> {
+    const cachedTask = this.cacheService.getTask(id);
+    if (cachedTask) {
+      return new Observable<Task>(observer => {
+        observer.next(cachedTask);
+        observer.complete();
+      });
+    }
+
     const token = this.authService.getToken();
-    return this.http.get<Task>(`${this.apiUrl}/GetAtask/${id}`, {
+    return this.http.get<TaskPreview>(`${this.apiUrl}/GetATask/${id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      map(taskPreview => ({
+        id: taskPreview.id,
+        title: taskPreview.title,
+        description: taskPreview.description,
+        environment: taskPreview.environment,
+        dueDate: taskPreview.dueDate,
+        importance: taskPreview.importance,
+        done: false,
+        priority: 0,
+        scheduled: taskPreview.dueDate !== null,
+        date: taskPreview.dueDate ? taskPreview.dueDate.toISOString().split('T')[0] : null,
+        streak: 0
+      })),
+      tap(task => {
+        this.cacheService.setTask(id, task);
+      })
+    );
   }
 
   // Mark a task as done
@@ -41,7 +101,17 @@ export class TaskService {
     const token = this.authService.getToken();
     return this.http.get<Task>(`${this.apiUrl}/MarkAsDone/${id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      tap((task: Task) => {
+        // Update cache
+        this.cacheService.setTask(id, task);
+        
+        // Show fire animation if task has date and streak
+        if (task.date && task.streak) {
+          this.animationService.showFire({ date: task.date, streak: task.streak });
+        }
+      })
+    );
   }
 
   // Search tasks by keyword
@@ -54,15 +124,24 @@ export class TaskService {
 
   // Get tasks by date
   getTasksByDate(date: Date): Observable<TaskPreview[]> {
+    const formattedDate = new Date(date).toLocaleDateString('en-CA');
+    const cachedTasks = this.cacheService.getTasksByDate(formattedDate);
+    
+    if (cachedTasks) {
+      return new Observable<TaskPreview[]>(observer => {
+        observer.next(cachedTasks);
+        observer.complete();
+      });
+    }
+
     const token = this.authService.getToken();
-    // Ensure date is in local timezone and formatted as YYYY-MM-DD
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const formattedDate = `${year}-${month}-${day}`;
     return this.http.get<TaskPreview[]>(`${this.apiUrl}/GetTasksByDatePreview/${formattedDate}`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      tap(tasks => {
+        this.cacheService.setTasksOfTheDay(tasks);
+      })
+    );
   }
 
   // Get extra tasks
@@ -78,7 +157,24 @@ export class TaskService {
     const token = this.authService.getToken();
     return this.http.put<Task>(`${this.apiUrl}/UpdateTask/${id}`, task, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      tap(updatedTask => {
+        // Update cache
+        this.cacheService.setTask(id, {
+          id: updatedTask.id,
+          title: updatedTask.title,
+          description: updatedTask.description,
+          environment: updatedTask.environment,
+          dueDate: new Date(updatedTask.dueDate),
+          importance: updatedTask.importance,
+          done: updatedTask.done,
+          priority: 0,
+          scheduled: updatedTask.dueDate !== null,
+          date: updatedTask.dueDate ? updatedTask.dueDate.toISOString().split('T')[0] : null,
+          streak: 0
+        });
+      })
+    );
   }
 
   // Delete a task
@@ -86,6 +182,11 @@ export class TaskService {
     const token = this.authService.getToken();
     return this.http.delete<void>(`${this.apiUrl}/DeleteTask/${id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      tap(() => {
+        // Remove task from cache
+        this.cacheService.clearCache();
+      })
+    );
   }
 }

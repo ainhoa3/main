@@ -89,16 +89,19 @@ export class SettingsComponent implements OnInit {
     this.loading = true;
     this.error = null;
     
-    this.authService.getCurrentUser$().subscribe({
-      next: (userData) => {
-        this.currentUser = {
-          ...this.currentUser,
-          ...userData,
-          preference: (userData as any).preference || ''
-        };
-        this.updateForms();
+    this.authService.getCurrentUser().subscribe({
+      next: (userData: UserUpdatingDTO | null) => {
+        if (userData) {
+          this.currentUser = {
+            ...this.currentUser,
+            ...userData,
+            preference: userData.preference || ''
+          };
+          this.updateForms();
+        }
+        this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error fetching user data:', error);
         this.error = 'Error al cargar los datos del usuario';
         this.loading = false;
