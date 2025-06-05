@@ -4,13 +4,13 @@ import { AuthService } from './auth.service';
 import { Observable, map, tap } from 'rxjs';
 import { Task, TaskCreatingDTO, TaskUpdatingDTO, TaskPreview } from '../models/task.model';
 import { AnimationService } from './animation.service';
-import { CacheService } from './cache.service';
+import { CacheService, CacheItem } from './cache.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TaskService {
-  private apiUrl = 'http://localhost:5112/DailyFlow/api/Tasks';
+  private apiUrl = 'https://dailyflowapi-d6ged4dtbrdbh0d6.spaincentral-01.azurewebsites.net/DailyFlow/api/Tasks';
   
   constructor(
     private http: HttpClient, 
@@ -42,7 +42,7 @@ export class TaskService {
       headers: { 'Authorization': `Bearer ${token}` }
     }).pipe(
       tap(tasks => {
-        // Cache each task preview
+        // Cache each task preview using API values directly
         tasks.forEach(taskPreview => {
           this.cacheService.setTask(taskPreview.id, {
             id: taskPreview.id,
@@ -51,11 +51,11 @@ export class TaskService {
             environment: taskPreview.environment,
             dueDate: taskPreview.dueDate,
             importance: taskPreview.importance,
-            done: false,
-            priority: 0,
+            done: taskPreview.done,
+            priority: taskPreview.priority,
             scheduled: taskPreview.dueDate !== null,
             date: taskPreview.dueDate ? taskPreview.dueDate.toISOString().split('T')[0] : null,
-            streak: 0
+            streak: taskPreview.streak || 0
           });
         });
         this.cacheService.setTasksOfTheDay(tasks);
@@ -84,11 +84,11 @@ export class TaskService {
         environment: taskPreview.environment,
         dueDate: taskPreview.dueDate,
         importance: taskPreview.importance,
-        done: false,
-        priority: 0,
+        done: taskPreview.done,
+        priority: taskPreview.priority,
         scheduled: taskPreview.dueDate !== null,
         date: taskPreview.dueDate ? taskPreview.dueDate.toISOString().split('T')[0] : null,
-        streak: 0
+        streak: taskPreview.streak || 0
       })),
       tap(task => {
         this.cacheService.setTask(id, task);
@@ -146,10 +146,59 @@ export class TaskService {
 
   // Get extra tasks
   getExtraTasks(): Observable<TaskPreview[]> {
+    // First try to get from local storage
+    const localStorageTasks = localStorage.getItem('extraTasks');
+    if (localStorageTasks) {
+      try {
+        const parsed = JSON.parse(localStorageTasks) as CacheItem<TaskPreview[]>;
+        if (!this.cacheService.isExpired(parsed)) {
+          // If data is valid, use it and return
+          return new Observable<TaskPreview[]>(observer => {
+            observer.next(parsed.data);
+            observer.complete();
+          });
+        }
+      } catch (error) {
+        console.error('Error parsing extra tasks from localStorage:', error);
+        // If there's an error, continue to fetch from API
+      }
+    }
+
+    // If not in localStorage or expired, fetch from API
     const token = this.authService.getToken();
     return this.http.get<TaskPreview[]>(`${this.apiUrl}/GetExtraTasks`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      map(apiTasks => {
+        // Use API data directly
+        return apiTasks.map(taskPreview => ({
+          id: taskPreview.id,
+          title: taskPreview.title,
+          description: taskPreview.description,
+          environment: taskPreview.environment,
+          dueDate: taskPreview.dueDate,
+          importance: taskPreview.importance,
+          done: taskPreview.done,
+          priority: taskPreview.priority,
+          scheduled: taskPreview.dueDate !== null,
+          date: taskPreview.dueDate ? taskPreview.dueDate.toISOString().split('T')[0] : null,
+          streak: taskPreview.streak || 0
+        }));
+      }),
+      tap(tasks => {
+        // Store in localStorage
+        const cacheItem: CacheItem<TaskPreview[]> = {
+          data: tasks,
+          timestamp: Date.now(),
+          ttl: this.cacheService.cacheTTL,
+          expiration: Date.now() + this.cacheService.cacheTTL
+        };
+        localStorage.setItem('extraTasks', JSON.stringify(cacheItem));
+
+        // Store in CacheService
+        this.cacheService.setExtraTasks(tasks);
+      })
+    );
   }
 
   // Update a task

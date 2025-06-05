@@ -14,9 +14,9 @@ import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
   template: `
     <div class="landing-page">
       <header class="header">
-        <div class="logo">
-          <img src="../../assets/logo.png" alt="DailyFlow Logo" class="logo-image">
-        </div>
+        
+          <img src="../../assets/logo.png" alt="DailyFlow Logo" style="width: 10%;" class="logo-image">
+        
         <div class="nav-buttons">
           <button class="btn btn-outline" (click)="showLoginModal = true">
             <fa-icon [icon]="faLock"></fa-icon>

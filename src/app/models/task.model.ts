@@ -49,6 +49,7 @@ export interface TaskPreview {
   description: string;
   environment: number;
   importance: number;
+  streak?: number;
   done: boolean;
   dueDate: Date;
   priority: number;

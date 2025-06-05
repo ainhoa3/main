@@ -13,7 +13,7 @@ import { CacheService } from './cache.service';
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:5112/DailyFlow/api/users';
+  private apiUrl = 'https://dailyflowapi-d6ged4dtbrdbh0d6.spaincentral-01.azurewebsites.net/DailyFlow/api/users';
   private tokenKey = 'auth_token';
   private currentUserSubject = new BehaviorSubject<UserUpdatingDTO | null>(null);
   
@@ -63,17 +63,27 @@ export class AuthService {
       try {
         const decodedToken: any = jwtDecode(token);
         if (decodedToken) {
-          const user: User = {
-            id: decodedToken.nameid || 0,
-            username: decodedToken.unique_name || '',
-            email: decodedToken.email || '',
-            streak: 0
-          };
-          this.currentUserSubject.next(user);
-          this.getUserStreak().subscribe(streak => {
-            const updatedUser = { ...user, streak };
-            this.currentUserSubject.next(updatedUser);
-            this.cacheService.setUser(updatedUser);
+          // First get user data from API
+          this.getUser().subscribe(apiUser => {
+            const user: User = {
+              id: apiUser.id,
+              username: apiUser.username,
+              email: apiUser.email,
+              streak: apiUser.streak
+            };
+            
+            // Update current user subject
+            this.currentUserSubject.next(user);
+            
+            // Cache the user data
+            this.cacheService.setUser(user);
+            
+            // Get streak from API
+            this.getUserStreak().subscribe(streak => {
+              const updatedUser = { ...user, streak };
+              this.currentUserSubject.next(updatedUser);
+              this.cacheService.setUser(updatedUser);
+            });
           });
         }
       } catch (error) {
@@ -115,10 +125,23 @@ export class AuthService {
   }
 
   getUser(): Observable<User> {
+    const cachedUser = this.cacheService.getUser();
+    if (cachedUser) {
+      return new Observable<User>(observer => {
+        observer.next(cachedUser);
+        observer.complete();
+      });
+    }
+
     const token = this.getToken();
-    return this.http.get<User>(`${this.apiUrl}/users`, {
+    return this.http.get<User>(`${this.apiUrl}/GetCurrentUser`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      tap(user => {
+        // Cache the user data from API
+        this.cacheService.setUser(user);
+      })
+    );
   }
 
   getUserStreak(): Observable<number> {
@@ -133,7 +156,16 @@ export class AuthService {
     const token = this.getToken();
     return this.http.get<number>(`${this.apiUrl}/streak`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      tap(streak => {
+        // Update cache with API value
+        const currentUser = this.cacheService.getUser();
+        if (currentUser) {
+          const updatedUser = { ...currentUser, streak };
+          this.cacheService.setUser(updatedUser);
+        }
+      })
+    );
   }
 
   addStreak(): Observable<number> {
@@ -200,13 +232,27 @@ export class AuthService {
   }
 
   logout(): void {
-    // Clear token cookie
-    this.cookieService.deleteCookie(this.tokenKey);
+    // Clear all cookies
+    this.cookieService.deleteAllCookies();
     
-    // Clear localStorage
+    // Clear all storage
     localStorage.clear();
+    sessionStorage.clear();
+    
+    // Clear cache service
+    this.cacheService.clearCache();
     
     // Clear current user subject
     this.currentUserSubject.next(null);
+    
+    // Clear any remaining token
+    this.cookieService.deleteCookie(this.tokenKey);
+    
+    // Ensure all subscriptions are unsubscribed
+    this.currentUserSubject.complete();
+    
+    // Clear any other storage
+    window.sessionStorage.clear();
+    window.localStorage.clear();
   }
 }

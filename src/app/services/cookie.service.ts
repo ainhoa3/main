@@ -52,6 +52,21 @@ export class CookieService {
   }
 
   /**
+   * Delete all cookies
+   */
+  deleteAllCookies(): void {
+    // Get all cookies
+    const cookies = document.cookie.split(';');
+    
+    // Delete each cookie
+    for (const cookie of cookies) {
+      const eqPos = cookie.indexOf('=');
+      const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+      document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+    }
+  }
+
+  /**
    * Check if a cookie exists
    * @param name Cookie name to check
    * @returns Boolean indicating cookie existence

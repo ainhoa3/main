@@ -10,7 +10,7 @@ import { CacheService } from './cache.service';
   providedIn: 'root'
 })
 export class HabitService {
-  private apiUrl = 'http://localhost:5112/DailyFlow/api/Habits';
+  private apiUrl = 'https://dailyflowapi-d6ged4dtbrdbh0d6.spaincentral-01.azurewebsites.net/DailyFlow/api/Habits';
 
   constructor(
     private http: HttpClient, 
@@ -47,6 +47,10 @@ export class HabitService {
       }))
     ),
     tap(habits => {
+      // Cache each habit individually using API values
+      habits.forEach(habit => {
+        this.cacheService.setHabit(habit.id, habit);
+      });
       this.cacheService.setHabitsOfTheDay(habits);
     })
     );

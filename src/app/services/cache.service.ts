@@ -4,7 +4,7 @@ import { Task, TaskPreview } from '../models/task.model';
 import { Habit, HabitPreview } from '../models/habit.model';
 import { User } from '../models/user.model';
 
-interface CacheItem<T> {
+export interface CacheItem<T> {
   data: T;
   timestamp: number;
   ttl: number;
@@ -16,7 +16,7 @@ interface CacheItem<T> {
 })
 export class CacheService {
   private cacheSubject = new BehaviorSubject<CacheItem<any>[]>([]);
-  private cacheTTL = 3600000; // 1 hour in milliseconds
+  public cacheTTL = 3600000; // 1 hour in milliseconds
 
   constructor() {
     // Load cache from localStorage on initialization
@@ -35,7 +35,7 @@ export class CacheService {
     localStorage.setItem('dailyflow_cache', JSON.stringify(this.cacheSubject.value));
   }
 
-  private isExpired(item: CacheItem<any>): boolean {
+  public isExpired(item: CacheItem<any>): boolean {
     return Date.now() > item.expiration;
   }
 
@@ -193,6 +193,28 @@ export class CacheService {
     localStorage.setItem('userStreak', JSON.stringify(cacheItem));
   }
 
+  // Cache methods for extra tasks
+  getExtraTasks(): TaskPreview[] | null {
+    const cached = localStorage.getItem('extraTasks');
+    if (cached) {
+      const parsed = JSON.parse(cached) as CacheItem<TaskPreview[]>;
+      if (!this.isExpired(parsed)) {
+        return parsed.data;
+      }
+    }
+    return null;
+  }
+
+  setExtraTasks(tasks: TaskPreview[]): void {
+    const cacheItem: CacheItem<TaskPreview[]> = {
+      data: tasks,
+      timestamp: Date.now(),
+      ttl: this.cacheTTL,
+      expiration: Date.now() + this.cacheTTL
+    };
+    localStorage.setItem('extraTasks', JSON.stringify(cacheItem));
+  }
+
   // Cache methods for search
   getTasksBySearch(search: string): TaskPreview[] | null {
     const key = `tasks_search_${search}`;
@@ -221,18 +243,11 @@ export class CacheService {
 
   // Clear cache
   clearCache(): void {
-    localStorage.removeItem('tasksOfTheDay');
-    localStorage.removeItem('habitsOfTheDay');
-    localStorage.removeItem('user');
-    localStorage.removeItem('userStreak');
-    const keys = Object.keys(localStorage);
-    keys.forEach(key => {
-      if (key.startsWith('task_') || key.startsWith('habit_') || key.startsWith('tasksByDate_') || key.startsWith('tasks_search_')) {
-        localStorage.removeItem(key);
-      }
-    });
+    // Clear all localStorage items
+    localStorage.clear();
+    
+    // Clear cache subject
     this.cacheSubject.next([]);
-    localStorage.removeItem('dailyflow_cache');
   }
 
   get cache$() {
