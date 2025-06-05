@@ -34,7 +34,6 @@ import { AnimationService } from '../../../services/animation.service';
       <div class="message-content">
         <h2>¡Felicidades!</h2>
         <p>Has completado todas tus tareas y hábitos de hoy</p>
-        <p>Tu racha actual es: {{ streak }} días</p>
       </div>
     </div>
   `,

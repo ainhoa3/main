@@ -20,9 +20,9 @@ import { MediaMatcher } from '@angular/cdk/layout';
             Nuevo hábito
           </button>
           <div class="user-info">
-            <div *ngIf="userStreak !== undefined" class="streak-container" (click)="navigateToStreakMetrics()">
+            <div *ngIf="currentUser.streak !== undefined" class="streak-container" (click)="navigateToStreakMetrics()">
               <span class="streak-icon">🔥</span>
-              <span class="streak-count">{{ userStreak }}</span>
+              <span class="streak-count">{{ currentUser.streak }}</span>
             </div>
             <div *ngIf="username !== undefined" class="username">{{ username }}</div>
             <div *ngIf="usernameInitial !== undefined" class="avatar">{{ usernameInitial }}</div>
@@ -171,7 +171,6 @@ export class HeaderComponent implements OnInit {
   @Input() pageName: string = '';
   username: string | undefined = undefined;
   usernameInitial: string | undefined = undefined;
-  userStreak: number | undefined = undefined;
   isMobileMenuOpen = false;
   currentUser: any = {
     id: 0,
@@ -187,7 +186,6 @@ export class HeaderComponent implements OnInit {
     if (currentUser?.username) {
       this.username = currentUser.username;
       this.usernameInitial = currentUser.username.charAt(0).toUpperCase();
-      this.userStreak = currentUser.streak ?? 0;
     }
   }
 
@@ -197,10 +195,9 @@ export class HeaderComponent implements OnInit {
       if (user?.username) {
         this.username = user.username;
         this.usernameInitial = user.username.charAt(0).toUpperCase();
-        this.userStreak = user.streak ?? 0;
+        this.currentUser.streak = user.streak ?? 0;
       }
     });
-    this.userStreak = this.authService.getCurrentUser()?.streak ?? 0;
     this.loadUserData();
   }
   private loadUserData(): void {

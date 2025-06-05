@@ -108,7 +108,7 @@ import { CommonModule } from '@angular/common';
     .top-rect-bg,
     .left-rect-bg,
     .right-rect-bg {
-      opacity: 0.1;
+      opacity:1;
       stroke: currentColor;
       fill: none;
     }
@@ -117,7 +117,7 @@ import { CommonModule } from '@angular/common';
     .top-rect,
     .left-rect,
     .right-rect {
-      stroke: #000;
+      stroke: var(--primary-color, #2ecc71) ;
       fill: none;
       transform-origin: center;
       transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);

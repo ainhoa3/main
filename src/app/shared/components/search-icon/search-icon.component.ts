@@ -19,16 +19,16 @@ import { CommonModule } from '@angular/common';
         stroke-linejoin="round"
       >
         <!-- Circle (background) -->
-        <circle cx="11" cy="11" r="8" fill="none" stroke="#000" stroke-opacity="0.1" />
+        <circle cx="11" cy="11" r="8" fill="none" stroke="#000" stroke-opacity="1" />
         
         <!-- Line (background) -->
-        <path d="m21 21-4.3-4.3" stroke="#000" stroke-opacity="0.1" />
+        <path d="m21 21-4.3-4.3" stroke="#000" stroke-opacity="1" />
         
         <!-- Check mark (background) -->
         <path 
           d="M8 12l2 2 4-4" 
           stroke="#000"
-          stroke-opacity="0.1"
+          stroke-opacity="0.6"
           fill="none"
         />
         
