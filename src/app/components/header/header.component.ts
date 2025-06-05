@@ -200,6 +200,7 @@ export class HeaderComponent implements OnInit {
         this.userStreak = user.streak ?? 0;
       }
     });
+    this.userStreak = this.authService.getCurrentUser()?.streak ?? 0;
     this.loadUserData();
   }
   private loadUserData(): void {
