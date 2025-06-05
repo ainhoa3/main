@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TaskService } from '../../../services/task.service';
@@ -32,7 +32,15 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
             La descripción es requerida
           </div>
         </div>
-        
+        <div class="form-group checkbox-group">
+          <label class="checkbox">
+            <input type="checkbox" formControlName="scheduled" (change)="onScheduledChange()">
+            <span>Programada</span>
+          </label>
+          <div class="help-text">
+            Una tarea programada es aquella que queremos poner un día concreto en lugar de dejar que el algoritmo lo decida por nosotros
+          </div>
+        </div>
         <div class="form-row">
           <div class="form-group half">
             <label for="environment">Entorno</label>
@@ -46,10 +54,10 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
           </div>
           
           <div class="form-group half">
-            <label for="date">Fecha Límite</label>
+            <label for="date">{{ taskForm.get('scheduled')?.value ? 'Fecha Programada' : 'Fecha Límite' }}</label>
             <input type="date" id="date" formControlName="date" class="form-control">
             <div *ngIf="taskForm.get('date')?.invalid && (taskForm.get('date')?.dirty || taskForm.get('date')?.touched)" class="error-message">
-              Selecciona una Fecha Límite
+              Selecciona una {{ taskForm.get('scheduled')?.value ? 'Fecha Programada' : 'Fecha Límite' }}
             </div>
           </div>
         </div>
@@ -66,7 +74,7 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
             </div>
           </div>
         </div>
-        
+
         <div *ngIf="formError" class="global-error-message">
           {{ formError }}
         </div>
@@ -190,24 +198,22 @@ export class CreateTaskComponent implements OnInit, AfterViewInit {
   constructor(
     private fb: FormBuilder,
     private taskService: TaskService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.taskForm = this.fb.group({
       title: ['', [
         Validators.required, 
         Validators.minLength(3), 
+        Validators.maxLength(100)
       ]], 
       description: ['', [
         Validators.required
       ]], 
-      environment: [PERSONAL_ENVIRONMENT, [
-        Validators.required
-      ]], 
-      date: ['', [
-        Validators.required
-      ]], 
-      importance: [''], 
-      priority: [''] 
+      environment: ['', Validators.required], 
+      date: ['', Validators.required], 
+      importance: [3, [Validators.required, Validators.min(1), Validators.max(5)]],
+      scheduled: [false]
     });
 
     // Add value change listeners for debugging
@@ -317,11 +323,12 @@ export class CreateTaskComponent implements OnInit, AfterViewInit {
     // Proceed with form submission
     this.submitting = true;
     const taskData: TaskCreatingDTO = {
-      title: this.taskForm.get('title')?.value.trim(),
-      description: this.taskForm.get('description')?.value.trim(),
-      environment: this.taskForm.get('environment')?.value,
-      importance: this.taskForm.get('importance')?.value,
-      dueDate: this.taskForm.get('date')?.value, 
+      title: this.taskForm.value.title!,
+      description: this.taskForm.value.description!,
+      environment: +this.taskForm.value.environment!,
+      dueDate: new Date(this.taskForm.value.date!),
+      importance: +this.taskForm.value.importance!,
+      scheduled: this.taskForm.value.scheduled
     };
     
     console.log('Submitting task data:', taskData);
@@ -342,5 +349,10 @@ export class CreateTaskComponent implements OnInit, AfterViewInit {
 
   onCancel(): void {
     this.router.navigate(['/dashboard']);
+  }
+
+  onScheduledChange(): void {
+    // Trigger change detection for the date label update
+    this.cdr.detectChanges();
   }
 }

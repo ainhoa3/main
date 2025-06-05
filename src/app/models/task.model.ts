@@ -19,6 +19,7 @@ export interface Task {
   importance: number; // 1-5 star rating
   done: boolean;
   priority: number;
+  scheduled: boolean;
 }
 
 export interface TaskCreatingDTO {
@@ -27,6 +28,7 @@ export interface TaskCreatingDTO {
   environment: number;
   dueDate?: Date; // Optional for API compatibility
   importance: number; // 1-5 star rating
+  scheduled: boolean;
 }
 
 export interface TaskUpdatingDTO {
@@ -36,7 +38,7 @@ export interface TaskUpdatingDTO {
   dueDate: string;
   importance: number; // 1-5 star rating
   done: boolean;
-  priority: number;
+  scheduled: boolean;
 }
 
 export interface TaskPreview {
