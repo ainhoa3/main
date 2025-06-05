@@ -40,6 +40,11 @@ import { DeleteIconComponent } from '../../../shared/components/delete-icon/dele
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" (click)="close()">Cerrar</button>
+          <button type="button" class="btn btn-success" 
+                  (click)="markHabitAsDone()" 
+                  [disabled]="!habit?.id">
+            <span>{{ habit?.done ? 'Marcar como pendiente' : 'Marcar como completado' }}</span>
+          </button>
           <button type="button" class="btn btn-danger d-flex align-items-center gap-2" 
                   (click)="deleteHabit()" 
                   (mouseenter)="deleteHover = true" 
@@ -237,6 +242,15 @@ import { DeleteIconComponent } from '../../../shared/components/delete-icon/dele
       color: #495057;
     }
 
+    .btn-success {
+      background-color: #198754;
+      color: white;
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background-color: #157347;
+    }
+
     .btn-danger {
       background-color: #dc3545;
       color: white;
@@ -301,6 +315,20 @@ export class HabitDetailComponent {
         },
         complete: () => {
           this.isDeleting = false;
+        }
+      });
+    }
+  }
+
+  markHabitAsDone(): void {
+    if (this.habit?.id) {
+      this.habitService.markHabitAsDone(this.habit.id).subscribe({
+        next: (response) => {
+          this.habit = response;
+        },
+        error: (error) => {
+          console.error('Error al marcar el hábito como completado:', error);
+          alert('Error al marcar el hábito como completado. Por favor, inténtalo de nuevo.');
         }
       });
     }
