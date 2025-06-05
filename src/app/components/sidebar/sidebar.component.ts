@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { FileCheckIconComponent } from '../../shared/components/file-check-icon/file-check-icon.component';
+import { AuthService } from '../../services/auth.service';
 import { ClockIconComponent } from '../../shared/components/clock-icon/clock-icon.component';
 import { CalendarCheckIconComponent } from '../../shared/components/calendar-check-icon/calendar-check-icon.component';
 import { SearchIconComponent } from '../../shared/components/search-icon/search-icon.component';
@@ -30,7 +31,7 @@ import { MenuIconComponent } from '../../shared/components/menu-icon/menu-icon.c
     <aside class="sidebar" [class.collapsed]="collapsed" (mouseleave)="resetAllHoverStates()">
       <div class="sidebar-header">
         <div class="logo">
-          <span class="logo-text">DailyFlow</span>
+        <img src="../../assets/logo.png" alt="DailyFlow Logo"  class="logo-image">
         </div>
         <button 
           class="toggle-btn" 
@@ -290,6 +291,10 @@ import { MenuIconComponent } from '../../shared/components/menu-icon/menu-icon.c
       color: var(--error-color);
     }
 
+    .logo-image {
+        width : 40%;
+        min-width: 50px;
+      }
     .logout:hover {
       background-color: rgba(231, 76, 60, 0.1);
     }
@@ -307,9 +312,7 @@ import { MenuIconComponent } from '../../shared/components/menu-icon/menu-icon.c
         margin-right: 0;
       }
       
-      .logo span {
-        display: none;
-      }
+      
       
       .logo::after {
         content: "DF";
@@ -333,7 +336,10 @@ export class SidebarComponent {
   isMenuHovered = false;
   isMobile = false;
 
-  constructor(private router: Router) {
+  constructor(
+    private router: Router,
+    private authService: AuthService
+  ) {
     this.checkIfMobile();
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
@@ -364,8 +370,15 @@ export class SidebarComponent {
   }
 
   logout(): void {
+    // Clear all storage
+    localStorage.clear();
+    sessionStorage.clear();
+    
     // Call auth service logout method
-    this.router.navigate(['/']);
+    this.authService.logout();
+    
+    // Navigate to landing page
+    this.router.navigate(['/landing']);
   }
 
   onTaskHover(isHovered: boolean): void {

@@ -29,23 +29,19 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
         </div>
       </div>
       <div class="tasks-list">
-        <div class="task-item" *ngFor="let task of filteredTasks" (click)="openTaskDetail(task.id)">
-          <div class="task-info">
-            <h3 class="task-title">{{ task.title }}</h3>
-            <div class="task-meta">
-              <span class="environment">{{ getEnvironmentString(task.environment) }}</span>
-              <span class="importance">Importancia: {{ task.importance }}/5</span>
-            </div>
+        <div class="task-item" *ngFor="let task of filteredTasks" (click)="openTaskDetail(task.id)" [class.completed]="task.done">
+          <div class="task-checkbox">
+            <input 
+              type="checkbox" 
+              [checked]="task.done" 
+              (click)="$event.stopPropagation()"
+              (change)="markAsDone(task.id)"
+            >
           </div>
-          <div class="task-actions">
-            <div class="task-status">
-              <span class="status" [ngClass]="{'completed': task.done, 'pending': !task.done}">
-                {{ task.done ? 'Completada' : 'Pendiente' }}
-              </span>
-            </div>
-            <div class="task-checkbox">
-              <input type="checkbox" [checked]="task.done" (change)="markAsDone(task.id, !task.done)" (click)="$event.stopPropagation()" />
-            </div>
+          <div class="task-content">
+            <div class="task-title" [ngClass]="{'completed-title': task.done}">{{ task.title }}</div>
+            <div class="task-environment" [ngClass]="{'work': task.environment === WORK_ENVIRONMENT, 'personal': task.environment === PERSONAL_ENVIRONMENT}">{{ getEnvironmentString(task.environment) }}</div>
+            <div class="task-description">{{ task.description }}</div>
           </div>
         </div>
       </div>
@@ -284,11 +280,9 @@ export class ExtraTasksComponent implements OnInit {
   loading = false;
   showTaskDetail: boolean = false;
   selectedTaskId: number = 0;
-  allTasks: TaskPreview[] = []; // Added missing property
 
   constructor(private taskService: TaskService) {
-    // Initialize allTasks with tasks
-    this.allTasks = [...this.tasks];
+    this.filteredTasks = [...this.tasks];
   }
 
   ngOnInit(): void {
@@ -297,12 +291,9 @@ export class ExtraTasksComponent implements OnInit {
 
   applyFilter(): void {
     if (this.currentFilter === null) {
-      this.filteredTasks = this.allTasks;
+      this.filteredTasks = [...this.tasks];
     } else {
-      // 0 for personal, 1 for work
-      this.filteredTasks = this.allTasks.filter((task: TaskPreview) => 
-        task.environment === this.currentFilter!
-      );
+      this.filteredTasks = this.tasks.filter(task => task.environment === this.currentFilter);
     }
   }
 
@@ -321,14 +312,10 @@ export class ExtraTasksComponent implements OnInit {
     });
   }
 
-  markAsDone(id: number, done: boolean): void {
+  markAsDone(id: number): void {
     this.loading = true;
     this.taskService.markTaskAsDone(id).subscribe({
       next: () => {
-        const task = this.tasks.find(t => t.id === id);
-        if (task) {
-          task.done = done;
-        }
         this.loadExtraTasks();
       },
       error: (error) => {
@@ -340,17 +327,13 @@ export class ExtraTasksComponent implements OnInit {
 
   filterEnvironment(environment: number): void {
     this.currentFilter = environment;
-    this.filteredTasks = this.allTasks.filter(task => task.environment === environment);
-    // Always keep tasks list populated to prevent hiding buttons
-    this.tasks = this.allTasks;
+    this.applyFilter();
     console.log('Filtering extra tasks:', { environment, filteredTasksCount: this.filteredTasks.length });
   }
 
   clearFilter(): void {
     this.currentFilter = null;
-    this.filteredTasks = this.allTasks;
-    // Reset the tasks list to show all tasks
-    this.tasks = this.allTasks;
+    this.applyFilter();
     console.log('Cleared extra tasks filter');
   }
 

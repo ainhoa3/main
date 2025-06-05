@@ -12,9 +12,11 @@
       <h1 class="page-title">{{ pageName }}</h1>
     </div>
     <button class="action-btn" (click)="navigateToCreateTask()">
+      <fa-icon [icon]="faPlus"></fa-icon>
       Nueva tarea
     </button>
     <button class="action-btn" (click)="navigateToCreateHabit()">
+      <fa-icon [icon]="faPlus"></fa-icon>
       Nuevo hábito
     </button>
     <button class="action-btn" (click)="navigateToStreakMetrics()">

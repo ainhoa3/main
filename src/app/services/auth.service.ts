@@ -7,6 +7,7 @@ import { UserUpdatingDTO } from '../models/user.model';
 import { StrikeDTO } from '../models/strike.model';
 import { CredencialesUserDTO, AuthResponse, User } from '../models/user.model';
 import { jwtDecode } from 'jwt-decode';
+import { CacheService } from './cache.service';
 
 @Injectable({
   providedIn: 'root'
@@ -18,7 +19,11 @@ export class AuthService {
   
   currentUser$ = this.currentUserSubject.asObservable();
   
-  constructor(private http: HttpClient, private cookieService: CookieService) {
+  constructor(
+    private http: HttpClient, 
+    private cookieService: CookieService,
+    private cacheService: CacheService
+  ) {
     this.initializeUser();
   }
 
@@ -47,8 +52,8 @@ export class AuthService {
     });
   }
 
-  getCurrentUser(): UserUpdatingDTO | null {
-    return this.currentUserSubject.value;
+  getCurrentUser(): Observable<UserUpdatingDTO | null> {
+    return this.currentUser$;
   }
 
   private initializeUser(): void {
@@ -58,16 +63,27 @@ export class AuthService {
       try {
         const decodedToken: any = jwtDecode(token);
         if (decodedToken) {
-          const user: User = {
-            id: decodedToken.nameid || 0,
-            username: decodedToken.unique_name || '',
-            email: decodedToken.email || '',
-            streak: 0
-          };
-          this.currentUserSubject.next(user);
-          this.getUserStreak().subscribe(streak => {
-            const updatedUser = { ...user, streak };
-            this.currentUserSubject.next(updatedUser);
+          // First get user data from API
+          this.getUser().subscribe(apiUser => {
+            const user: User = {
+              id: apiUser.id,
+              username: apiUser.username,
+              email: apiUser.email,
+              streak: apiUser.streak
+            };
+            
+            // Update current user subject
+            this.currentUserSubject.next(user);
+            
+            // Cache the user data
+            this.cacheService.setUser(user);
+            
+            // Get streak from API
+            this.getUserStreak().subscribe(streak => {
+              const updatedUser = { ...user, streak };
+              this.currentUserSubject.next(updatedUser);
+              this.cacheService.setUser(updatedUser);
+            });
           });
         }
       } catch (error) {
@@ -109,31 +125,45 @@ export class AuthService {
   }
 
   getUser(): Observable<User> {
+    const cachedUser = this.cacheService.getUser();
+    if (cachedUser) {
+      return new Observable<User>(observer => {
+        observer.next(cachedUser);
+        observer.complete();
+      });
+    }
+
     const token = this.getToken();
-    return this.http.get<User>(`${this.apiUrl}/users`, {
+    return this.http.get<User>(`${this.apiUrl}/GetCurrentUser`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      tap(user => {
+        // Cache the user data from API
+        this.cacheService.setUser(user);
+      })
+    );
   }
 
   getUserStreak(): Observable<number> {
+    const cachedUser = this.cacheService.getUser();
+    if (cachedUser) {
+      return new Observable<number>(observer => {
+        observer.next(cachedUser.streak);
+        observer.complete();
+      });
+    }
+
     const token = this.getToken();
     return this.http.get<number>(`${this.apiUrl}/streak`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
-  }
-
-  getCurrentUser$(): Observable<UserUpdatingDTO> {
-    const token = this.getToken();
-    if (!token) {
-      return new Observable<UserUpdatingDTO>((subscriber) => {
-        subscriber.error('No token available');
-      });
-    }
-    return this.http.get<UserUpdatingDTO>(`${this.apiUrl}/GetCurrentUser`, {
-      headers: { 'Authorization': `Bearer ${token}` }
     }).pipe(
-      tap((user) => {
-        this.currentUserSubject.next(user);
+      tap(streak => {
+        // Update cache with API value
+        const currentUser = this.cacheService.getUser();
+        if (currentUser) {
+          const updatedUser = { ...currentUser, streak };
+          this.cacheService.setUser(updatedUser);
+        }
       })
     );
   }
@@ -202,6 +232,27 @@ export class AuthService {
   }
 
   logout(): void {
+    // Clear all cookies
+    this.cookieService.deleteAllCookies();
+    
+    // Clear all storage
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Clear cache service
+    this.cacheService.clearCache();
+    
+    // Clear current user subject
+    this.currentUserSubject.next(null);
+    
+    // Clear any remaining token
     this.cookieService.deleteCookie(this.tokenKey);
+    
+    // Ensure all subscriptions are unsubscribed
+    this.currentUserSubject.complete();
+    
+    // Clear any other storage
+    window.sessionStorage.clear();
+    window.localStorage.clear();
   }
 }

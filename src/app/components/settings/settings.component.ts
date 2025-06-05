@@ -89,16 +89,19 @@ export class SettingsComponent implements OnInit {
     this.loading = true;
     this.error = null;
     
-    this.authService.getCurrentUser$().subscribe({
-      next: (userData) => {
-        this.currentUser = {
-          ...this.currentUser,
-          ...userData,
-          preference: (userData as any).preference || ''
-        };
-        this.updateForms();
+    this.authService.getCurrentUser().subscribe({
+      next: (userData: UserUpdatingDTO | null) => {
+        if (userData) {
+          this.currentUser = {
+            ...this.currentUser,
+            ...userData,
+            preference: userData.preference || ''
+          };
+          this.updateForms();
+        }
+        this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error fetching user data:', error);
         this.error = 'Error al cargar los datos del usuario';
         this.loading = false;
@@ -166,7 +169,11 @@ export class SettingsComponent implements OnInit {
       (updatePayload as any).preference = fieldValue;
     }
 
+    // Show loading spinner and disable interactions
     this.loading = true;
+    this.editingField = null; // Disable editing while saving
+
+    // Make the API request
     this.authService.updateUser(updatePayload as UserUpdatingDTO).subscribe({
       next: (updatedUser: any) => {
         // Update local state with the updated user data
@@ -176,14 +183,19 @@ export class SettingsComponent implements OnInit {
           email: updatedUser.email || this.currentUser.email,
           preference: updatedUser.preference || this.currentUser.preference
         };
-        this.editingField = null;
+        // Update forms with new data
+        this.updateForms();
       },
       error: (error) => {
         console.error('Error updating user:', error);
         this.error = 'Error al actualizar los datos';
+        // Re-enable editing if there was an error
+        this.startEditing(field);
       },
       complete: () => {
+        // Hide loading spinner and reload data
         this.loading = false;
+        this.loadUserData();
       }
     });
   }

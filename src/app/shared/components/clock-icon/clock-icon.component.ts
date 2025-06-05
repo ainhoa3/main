@@ -26,7 +26,7 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
         <path 
           d="M12 12l4 0"
           stroke="#000"
-          stroke-opacity="0.2"
+          stroke-opacity="0.5"
           stroke-width="2"
           fill="none"
         />
@@ -35,7 +35,7 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
         <path 
           d="M12 12l0 -6"
           stroke="#000"
-          stroke-opacity="0.2"
+          stroke-opacity="0.5"
           stroke-width="2"
           fill="none"
         />

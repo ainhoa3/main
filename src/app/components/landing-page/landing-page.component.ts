@@ -7,7 +7,6 @@ import { CredencialesUserDTO } from '../../models/user.model';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faUser, faLock, faEnvelope, faArrowRight, faEye, faEyeSlash, faCheck, faXmark, faTasks, faChartLine, faCalendarCheck } from '@fortawesome/free-solid-svg-icons';
 import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
-
 @Component({
   selector: 'app-landing-page',
   standalone: true,
@@ -15,7 +14,9 @@ import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
   template: `
     <div class="landing-page">
       <header class="header">
-        <div class="logo">DailyFlow</div>
+        
+          <img src="../../assets/logo.png" alt="DailyFlow Logo" style="width: 10%;" class="logo-image">
+        
         <div class="nav-buttons">
           <button class="btn btn-outline" (click)="showLoginModal = true">
             <fa-icon [icon]="faLock"></fa-icon>

@@ -6,6 +6,8 @@ export interface Habit {
   programmDays: number;
   lastDay: string | Date;
   _Environment: string;
+  date: string;
+  streak: number;
 }
 
 export interface HabitCreatingDTO {
@@ -34,4 +36,6 @@ export interface HabitPreview {
   done: boolean;
   programmDays: number;
   lastDay: string | Date;
+  date: string;
+  streak: number;
 }

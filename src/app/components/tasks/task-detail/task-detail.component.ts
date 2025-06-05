@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output, Inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, Inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TaskService } from '../../../services/task.service';
@@ -43,6 +43,16 @@ import { DeleteIconComponent } from '../../../shared/components/delete-icon/dele
               <textarea id="description" formControlName="description" class="form-control" rows="3"></textarea>
             </div>
             
+            <div class="form-group checkbox-group">
+              <label class="checkbox">
+                <input type="checkbox" formControlName="scheduled" (change)="onScheduledChange()">
+                <span>Programada</span>
+              </label>
+              <div class="help-text">
+                Una tarea programada es aquella que queremos poner un día concreto en lugar de dejar que el algoritmo lo decida por nosotros
+              </div>
+            </div>
+            
             <div class="form-group">
               <label for="environment">Entorno</label>
               <select id="environment" formControlName="environment" class="form-control">
@@ -52,7 +62,7 @@ import { DeleteIconComponent } from '../../../shared/components/delete-icon/dele
             </div>
             
             <div class="form-group">
-              <label for="dueDate">Fecha Límite</label>
+              <label for="dueDate">{{ taskForm.get('scheduled')?.value ? 'Fecha Programada' : 'Fecha Límite' }}</label>
               <input type="date" id="dueDate" formControlName="dueDate" class="form-control">
             </div>
             
@@ -68,13 +78,6 @@ import { DeleteIconComponent } from '../../../shared/components/delete-icon/dele
             </div>
           </div>
         </div>
-            
-            <div class="form-group checkbox-group">
-              <label class="checkbox">
-                <input type="checkbox" formControlName="done">
-                <span>Marcar como completada</span>
-              </label>
-            </div>
           </form>
         </div>
         <div class="modal-footer">
@@ -235,7 +238,8 @@ export class TaskDetailComponent implements OnInit {
 
   constructor(
     @Inject(TaskService) private taskService: TaskService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -281,17 +285,18 @@ export class TaskDetailComponent implements OnInit {
 
 
 
-  initForm(): void {
-    if (this.task) {
-      this.taskForm = this.fb.group({
-        title: [this.task.title, Validators.required],
-        description: [this.task.description],
-        environment: [this.task.environment],
-        dueDate: [this.formatDateForInput(this.task.dueDate)],
-        importance: [this.task.importance, [Validators.min(1), Validators.max(5)]],
-        done: [this.task.done]
-      });
-    }
+  private initForm() {
+    if (!this.task) return;
+    
+    this.taskForm = this.fb.group({
+      title: [this.task.title, [Validators.required]],
+      description: [this.task.description],
+      environment: [this.task.environment, [Validators.required]],
+      dueDate: [this.task.dueDate ? this.formatDateForInput(this.task.dueDate) : ''],
+      importance: [this.task.importance, [Validators.required, Validators.min(1), Validators.max(5)]],
+      done: [this.task.done || false],
+      scheduled: [this.task.scheduled || false]
+    });
   }
 
   formatDateForInput(date: Date): string {
@@ -314,13 +319,13 @@ export class TaskDetailComponent implements OnInit {
   saveTask(): void {
     if (this.taskForm?.valid && this.task) {
       const updatedTask: TaskUpdatingDTO = {
-        title: this.taskForm.value.title,
-        description: this.taskForm.value.description,
-        environment: this.taskForm.value.environment,
-        dueDate: this.taskForm.value.dueDate,
-        importance: this.taskForm.value.importance,
-        priority: this.taskForm.value.priority,
-        done: this.taskForm.value.done
+        title: this.taskForm.value.title!,
+        description: this.taskForm.value.description!,
+        environment: +this.taskForm.value.environment!,
+        dueDate: this.taskForm.value.dueDate!,
+        importance: +this.taskForm.value.importance!,
+        done: this.taskForm.value.done!,
+        scheduled: this.taskForm.value.scheduled!
       };
 
       this.taskService.updateTask(this.task.id, updatedTask).subscribe({
@@ -360,5 +365,10 @@ export class TaskDetailComponent implements OnInit {
     if (target.classList.contains('modal-backdrop')) {
       this.close.emit();
     }
+  }
+
+  onScheduledChange(): void {
+    // Trigger change detection for the date label update
+    this.cdr.detectChanges();
   }
 }

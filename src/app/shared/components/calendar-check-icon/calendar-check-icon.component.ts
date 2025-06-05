@@ -28,7 +28,7 @@ import { CommonModule } from '@angular/common';
         <path 
           d="M9 16l2 2 4-4" 
           stroke="#000"
-          stroke-opacity="0.2"
+          stroke-opacity="0.6"
           fill="none"
         />
         

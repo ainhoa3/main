@@ -1,158 +1,182 @@
 <div class="habits-container">
-  <h2 class="section-title">Hábitos del Día</h2>
-  <div class="habits-filters">
-    <button class="btn btn-filter" (click)="applyFilter('0')" [ngClass]="{'selected': currentFilter === '0'}">Personal</button>
-    <button class="btn btn-filter" (click)="applyFilter('1')" [ngClass]="{'selected': currentFilter === '1'}">Trabajo</button>
-    <button class="btn btn-filter" (click)="applyFilter('todos')" [ngClass]="{'selected': currentFilter === 'todos'}">Todos</button>
-  </div>
-
-  <!-- Mensaje cuando no hay hábitos -->
-  <div *ngIf="filteredHabits.length === 0" class="no-habits-message text-center py-5">
-    <div class="mb-4">
-      <div class="empty-state-icon mb-3">
-        <i class="fas fa-clipboard-list fa-4x text-primary"></i>
+  <div class="content-container">
+    <div class="header">
+      <div class="header-content">
+        <h2 class="section-title">Hábitos del Día</h2>
+        <div class="header-buttons">
+          <button class="btn header-btn" routerLink="/habits/create">
+            <span class="header-icon">🎯</span>
+          </button>
+        </div>
       </div>
-      <h3 class="mb-3">¡No hay hábitos para hoy!</h3>
-      <p class="lead text-muted mb-4">
-        Aún no tienes hábitos programados para hoy. 
-        ¿Por qué no comienzas creando uno para mejorar tu día?
-      </p>
-      <button class="btn btn-outline-secondary" (click)="navigateToCreate()">
+    </div>
+    <div class="tasks-filters">
+      <div class="filters-container">
+        <div class="button-container">
+          <button class="btn btn-filter" (click)="applyFilter('0')" [ngClass]="{'selected': currentFilter === '0'}">
+            <span class="filter-icon">🏠</span>
+            <span class="filter-text">Personal</span>
+          </button>
+          <button class="btn btn-filter" (click)="applyFilter('1')" [ngClass]="{'selected': currentFilter === '1'}">
+            <span class="filter-icon">💼</span>
+            <span class="filter-text">Trabajo</span>
+          </button>
+          <button class="btn btn-filter" (click)="applyFilter('todos')" [ngClass]="{'selected': currentFilter === 'todos'}">
+            <span class="filter-icon">📋</span>
+            <span class="filter-text">Todos</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="habits-list">
+      <div class="habit-item" *ngFor="let habit of filteredHabits" (click)="openHabitDetail(habit); $event.stopPropagation()">
+        <div class="habit-info">
+          <h3 class="habit-title">{{ habit.title }}</h3>
+          <div class="habit-meta">
+            <span class="environment" [ngClass]="getEnvironmentClass(convertEnvironmentToNumber(habit._Environment))">
+              {{ getEnvironmentName(convertEnvironmentToNumber(habit._Environment)) }}
+            </span>
+            <span class="program-days">Días: {{ habit.programmDays }}</span>
+          </div>
+        </div>
+        <div class="habit-actions">
+          <div class="habit-status">
+            <span class="status" [ngClass]="{'completed': habit.done, 'pending': !habit.done}">
+              {{ habit.done ? 'Completado' : 'Pendiente' }}
+            </span>
+          </div>
+          <div class="habit-checkbox">
+            <input type="checkbox" [checked]="habit.done" (change)="$event.stopPropagation(); markHabitAsDone(habit.id)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensaje cuando no hay hábitos -->
+    <div *ngIf="filteredHabits.length === 0" class="no-habits-message text-center py-5">
+      <div class="mb-4">
+        <div class="empty-state-icon mb-3">
+          <i class="fas fa-clipboard-list fa-4x text-primary"></i>
+        </div>
+        <h3 class="mb-3">¡No hay hábitos para hoy!</h3>
+        <p class="lead text-muted mb-4">
+          Aún no tienes hábitos programados para hoy. 
+          ¿Por qué no comienzas creando uno para mejorar tu día?
+        </p>
+        <button class="btn btn-outline-secondary" (click)="navigateToCreate()">
           <i class="fas fa-lightbulb me-2"></i>¿Qué es un hábito?
         </button>
-      <button class="btn btn-primary btn-lg" (click)="navigateToCreate()">
-        <i class="fas fa-plus me-2"></i>Crear hábito
-      </button>
-    </div>
-  </div>
-
-  <div class="habits-list">
-    <div class="habit-card" *ngFor="let habit of filteredHabits" (click)="openHabitDetail(habit); $event.stopPropagation()">
-      <div class="habit-card-header">
-        <h3 class="habit-title">{{ habit.title }}</h3>
-        <div class="habit-meta">
-          <span class="environment" [ngClass]="getEnvironmentClass(convertEnvironmentToNumber(habit._Environment))">
-            {{ getEnvironmentName(convertEnvironmentToNumber(habit._Environment)) }}
-          </span>
-          <span class="program-days">Días: {{ habit.programmDays }}</span>
-        </div>
-      </div>
-      <div class="habit-card-body">
-        <div class="habit-status">
-          <span class="status" [ngClass]="{'completed': habit.done, 'pending': !habit.done}">
-            {{ habit.done ? 'Completado' : 'Pendiente' }}
-          </span>
-        </div>
-        <div class="habit-checkbox">
-          <input type="checkbox" [checked]="habit.done" (change)="$event.stopPropagation(); markHabitAsDone(habit.id)">
-        </div>
+        <button class="btn btn-primary btn-lg" (click)="navigateToCreate()">
+          <i class="fas fa-plus me-2"></i>Crear hábito
+        </button>
       </div>
     </div>
   </div>
-
-  <!-- Botón para crear nuevo hábito -->
-  <button class="btn btn-primary" (click)="navigateToCreate(); $event.stopPropagation()">
-    <i class="fas fa-plus"></i> Nuevo Hábito
-  </button>
-
-  <!-- Modal de detalles -->
-  <ng-template #modalContent>
-    <div class="modal-backdrop" (click)="onBackdropClick($event)">
-      <div class="modal-content habit-detail" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2 class="modal-title">{{ isEditing ? 'Editar Hábito' : 'Detalle del Hábito' }}</h2>
-          <button type="button" class="close-btn" (click)="closeModal()" aria-label="Cerrar">×</button>
-        </div>
-        <div class="modal-body">
-          <!-- Vista de solo lectura -->
-          <div *ngIf="!isEditing && selectedHabit" class="habit-view">
-            <h3 class="habit-title">{{ selectedHabit.title }}</h3>
-            <div class="habit-meta">
-              <span class="environment" [ngClass]="getEnvironmentClass(convertEnvironmentToNumber(selectedHabit._Environment))">
-                {{ getEnvironmentName(convertEnvironmentToNumber(selectedHabit._Environment)) }}
-              </span>
-              <span class="program-days">Días: {{ selectedHabit.programmDays }}</span>
-              <span class="last-day" *ngIf="selectedHabit.lastDay">Último día: {{ selectedHabit.lastDay | date:'dd/MM/yyyy' }}</span>
-            </div>
-            <p class="habit-description" *ngIf="selectedHabit.description">{{ selectedHabit.description }}</p>
-            <div class="habit-status">
-              <span class="status" [ngClass]="{'completed': selectedHabit.done, 'pending': !selectedHabit.done}">
-                {{ selectedHabit.done ? 'Completado' : 'Pendiente' }}
-              </span>
-            </div>
-          </div>
-
-          <!-- Formulario de edición -->
-          <form *ngIf="isEditing" [formGroup]="habitForm" class="edit-form">
-            <div class="form-group">
-              <label for="title">Título</label>
-              <input type="text" id="title" formControlName="title" class="form-control">
-            </div>
-            
-            <div class="form-group">
-              <label for="description">Descripción</label>
-              <textarea id="description" formControlName="description" class="form-control" rows="3"></textarea>
-            </div>
-            
-            <div class="form-group">
-              <label for="environment">Entorno</label>
-              <select id="environment" formControlName="environment" class="form-control">
-                <option [value]="0">Trabajo</option>
-                <option [value]="1">Personal</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label for="programmDays">Días de programación</label>
-              <input type="number" id="programmDays" formControlName="programmDays" class="form-control" min="1">
-            </div>
-            
-            <div class="form-group">
-              <label for="lastDay">Último día</label>
-              <input type="date" id="lastDay" formControlName="lastDay" class="form-control">
-            </div>
-            
-            <div class="form-group checkbox-group">
-              <label class="checkbox">
-                <input type="checkbox" formControlName="done">
-                <span>Marcar como completado</span>
-              </label>
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <div class="btn-group" *ngIf="!isEditing && selectedHabit">
-            <button class="btn btn-outline" (click)="startEditing()">Editar</button>
-            <button class="btn btn-danger" (click)="selectedHabit && confirmDelete(selectedHabit.id)" title="Eliminar hábito">
-              <i class="fas fa-trash-alt"></i> Eliminar
-            </button>
-          </div>
-          <button *ngIf="isEditing" class="btn btn-outline" (click)="cancelEdit()">Cancelar</button>
-          <button *ngIf="isEditing" class="btn btn-primary" (click)="onSave()" [disabled]="habitForm.invalid">
-            Guardar
-          </button>
-          <button *ngIf="!isEditing" class="btn btn-primary" (click)="closeModal()">Cerrar</button>
-        </div>
-      </div>
-    </div>
-  </ng-template>
-
-  <!-- Modal de confirmación de eliminación -->
-  <ng-template #deleteModal>
-    <div class="modal-backdrop" (click)="onBackdropClick($event)">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Confirmar eliminación</h5>
-          <button type="button" class="close-btn" (click)="closeModal()" aria-label="Cerrar">×</button>
-        </div>
-        <div class="modal-body">
-          ¿Estás seguro de que deseas eliminar este hábito? Esta acción no se puede deshacer.
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
-          <button type="button" class="btn btn-danger" (click)="selectedHabit && deleteHabit(selectedHabit.id)">Eliminar</button>
-        </div>
-      </div>
-    </div>
-  </ng-template>
 </div>
+
+<!-- Botón para crear nuevo hábito -->
+<button class="btn btn-primary" (click)="navigateToCreate(); $event.stopPropagation()">
+  <i class="fas fa-plus"></i> Nuevo Hábito
+</button>
+
+<!-- Modal de detalles -->
+<ng-template #modalContent>
+  <div class="modal-backdrop" (click)="onBackdropClick($event)">
+    <div class="modal-content habit-detail" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">{{ isEditing ? 'Editar Hábito' : 'Detalle del Hábito' }}</h2>
+        <button type="button" class="close-btn" (click)="closeModal()" aria-label="Cerrar">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- Vista de solo lectura -->
+        <div *ngIf="!isEditing && selectedHabit" class="habit-view">
+          <h3 class="habit-title">{{ selectedHabit.title }}</h3>
+          <div class="habit-meta">
+            <span class="environment" [ngClass]="getEnvironmentClass(convertEnvironmentToNumber(selectedHabit._Environment))">
+              {{ getEnvironmentName(convertEnvironmentToNumber(selectedHabit._Environment)) }}
+            </span>
+            <span class="program-days">Días: {{ selectedHabit.programmDays }}</span>
+            <span class="last-day" *ngIf="selectedHabit.lastDay">Último día: {{ selectedHabit.lastDay | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <p class="habit-description" *ngIf="selectedHabit.description">{{ selectedHabit.description }}</p>
+          <div class="habit-status">
+            <span class="status" [ngClass]="{'completed': selectedHabit.done, 'pending': !selectedHabit.done}">
+              {{ selectedHabit.done ? 'Completado' : 'Pendiente' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Formulario de edición -->
+        <form *ngIf="isEditing" [formGroup]="habitForm" class="edit-form">
+          <div class="form-group">
+            <label for="title">Título</label>
+            <input type="text" id="title" formControlName="title" class="form-control">
+          </div>
+          
+          <div class="form-group">
+            <label for="description">Descripción</label>
+            <textarea id="description" formControlName="description" class="form-control" rows="3"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="environment">Entorno</label>
+            <select id="environment" formControlName="environment" class="form-control">
+              <option [value]="0">Trabajo</option>
+              <option [value]="1">Personal</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="programmDays">Días de programación</label>
+            <input type="number" id="programmDays" formControlName="programmDays" class="form-control" min="1">
+          </div>
+          
+          <div class="form-group">
+            <label for="lastDay">Último día</label>
+            <input type="date" id="lastDay" formControlName="lastDay" class="form-control">
+          </div>
+          
+          <div class="form-group checkbox-group">
+            <label class="checkbox">
+              <input type="checkbox" formControlName="done">
+              <span>Marcar como completado</span>
+            </label>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <div class="btn-group" *ngIf="!isEditing && selectedHabit">
+          <button class="btn btn-outline" (click)="startEditing()">Editar</button>
+          <button class="btn btn-danger" (click)="selectedHabit && confirmDelete(selectedHabit.id)" title="Eliminar hábito">
+            <i class="fas fa-trash-alt"></i> Eliminar
+          </button>
+        </div>
+        <button *ngIf="isEditing" class="btn btn-outline" (click)="cancelEdit()">Cancelar</button>
+        <button *ngIf="isEditing" class="btn btn-primary" (click)="onSave()" [disabled]="habitForm.invalid">
+          Guardar
+        </button>
+        <button *ngIf="!isEditing" class="btn btn-primary" (click)="closeModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Modal de confirmación de eliminación -->
+<ng-template #deleteModal>
+  <div class="modal-backdrop" (click)="onBackdropClick($event)">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirmar eliminación</h5>
+        <button type="button" class="close-btn" (click)="closeModal()" aria-label="Cerrar">×</button>
+      </div>
+      <div class="modal-body">
+        ¿Estás seguro de que deseas eliminar este hábito? Esta acción no se puede deshacer.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+        <button type="button" class="btn btn-danger" (click)="selectedHabit && deleteHabit(selectedHabit.id)">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</ng-template>
