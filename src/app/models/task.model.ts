@@ -20,6 +20,8 @@ export interface Task {
   done: boolean;
   priority: number;
   scheduled: boolean;
+  date: string;
+  streak: number;
 }
 
 export interface TaskCreatingDTO {

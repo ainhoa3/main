@@ -7,38 +7,40 @@ import { AnimationService } from '../../../services/animation.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="fire-animation" *ngIf="showAnimation">
-      <div class="fire-container">
-        <div class="fire">
-          <div class="fire-left">
-            <div class="main-fire"></div>
-            <div class="particle-fire"></div>
-          </div>
-          <div class="fire-center">
-            <div class="main-fire"></div>
-            <div class="particle-fire">
-              <div class="streak-text">+{{streakData.streak}}</div>
+    <div class="fire-animation-modal" *ngIf="showAnimation">
+      <div class="modal-content">
+        <div class="fire-container">
+          <div class="fire">
+            <div class="fire-left">
+              <div class="main-fire"></div>
+              <div class="particle-fire"></div>
+            </div>
+            <div class="fire-center">
+              <div class="main-fire"></div>
+              <div class="particle-fire">
+                <div class="streak-text">+{{streakData.streak}}</div>
+              </div>
+            </div>
+            <div class="fire-right">
+              <div class="main-fire"></div>
+              <div class="particle-fire"></div>
+            </div>
+            <div class="fire-bottom">
+              <div class="main-fire"></div>
             </div>
           </div>
-          <div class="fire-right">
-            <div class="main-fire"></div>
-            <div class="particle-fire"></div>
-          </div>
-          <div class="fire-bottom">
-            <div class="main-fire"></div>
+        </div>
+        <div class="felicitation-message">
+          <div class="message-content">
+            <h2>¡Felicidades!</h2>
+            <p>Has completado todas tus tareas y hábitos de hoy</p>
           </div>
         </div>
       </div>
     </div>
-    <div class="felicitation-message" *ngIf="showAnimation">
-      <div class="message-content">
-        <h2>¡Felicidades!</h2>
-        <p>Has completado todas tus tareas y hábitos de hoy</p>
-      </div>
-    </div>
   `,
   styles: [`
-    .fire-animation {
+    .fire-animation-modal {
       position: fixed;
       top: 0;
       left: 0;
@@ -48,13 +50,32 @@ import { AnimationService } from '../../../services/animation.service';
       justify-content: center;
       align-items: center;
       z-index: 9999;
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 20px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
     }
 
     .fire-container {
       position: relative;
       width: 200px;
       height: 200px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.1);
     }
 
     .streak-text {
