@@ -113,7 +113,7 @@ export class TaskService {
     }
 
     const token = this.authService.getToken();
-    return this.http.get<TaskPreview[]>(`${this.apiUrl}/GetTasksByDate/${date}`, {
+    return this.http.get<TaskPreview[]>(`${this.apiUrl}/GetTasksByDatePreview/${date}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     }).pipe(
       map(tasks => tasks.map(taskPreview => this.transformTaskPreview(taskPreview))),

@@ -21,11 +21,13 @@ interface StreakPeriod {
           <div class="streak-content">
             <div class="streak-dates">
               {{ formatDate(streak.startDate) }}
+              <span *ngIf="streak.startDate !== streak.endDate"> - {{ formatDate(streak.endDate) }}</span>
             </div>
             <div class="streak-duration">
-              {{ streak.days }} día{{ streak.days > 1 ? 's' : '' }}
+              <span *ngIf="streak.days === 0">Racha rota</span>
+              <span *ngIf="streak.days > 0">{{ streak.days }} día{{ streak.days > 1 ? 's' : '' }}</span>
             </div>
-            <div class="streak-bar" [style.width]="calculateBarWidth(streak.days)"></div>
+            <div class="streak-bar" *ngIf="streak.days > 0" [style.width]="calculateBarWidth(streak.days)"></div>
           </div>
         </div>
       </div>
@@ -141,19 +143,65 @@ export class StreakTimelineComponent implements OnChanges {
       return;
     }
 
-    // Ordenar los strikes por fecha
+    // Ordenar los strikes por fecha (de más reciente a más viejo)
     const sortedStrikes = [...this.monthlyStrikes].sort((a, b) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime()
+      new Date(b.date).getTime() - new Date(a.date).getTime()
     );
 
-    // Mostrar cada strike como un punto individual
-    const streaks: StreakPeriod[] = sortedStrikes.map(strike => ({
-      startDate: new Date(strike.date),
-      endDate: new Date(strike.date),
-      days: strike.streak
-    }));
+    const streaks: StreakPeriod[] = [];
+    let currentGroup: { startDate: Date, endDate: Date, maxDays: number } | null = null;
 
-    this.streaks = streaks;
+    // Procesar los strikes
+    for (const strike of sortedStrikes) {
+      const date = new Date(strike.date);
+      
+      if (strike.streak === 0) {
+        // Si es una racha rota, la mostramos como un punto individual
+        streaks.push({
+          startDate: date,
+          endDate: date,
+          days: 0
+        });
+      } else {
+        // Si es una racha válida (distinta de 0)
+        if (!currentGroup) {
+          // Iniciar un nuevo grupo
+          currentGroup = { startDate: date, endDate: date, maxDays: strike.streak };
+        } else {
+          // Si es consecutivo con el grupo actual
+          const lastDate = currentGroup.endDate;
+          const diffDays = Math.round(Math.abs((date.getTime() - lastDate.getTime()) / (24 * 60 * 60 * 1000)));
+          
+          if (diffDays === 1) {
+            // Extender el grupo
+            currentGroup.endDate = date;
+            currentGroup.maxDays = Math.max(currentGroup.maxDays, strike.streak);
+          } else {
+            // Guardar el grupo actual y empezar uno nuevo
+            streaks.push({
+              startDate: currentGroup.startDate,
+              endDate: currentGroup.endDate,
+              days: currentGroup.maxDays
+            });
+            currentGroup = { startDate: date, endDate: date, maxDays: strike.streak };
+          }
+        }
+      }
+    }
+
+    // Asegurarse de agregar el último grupo
+    if (currentGroup) {
+      streaks.push({
+        startDate: currentGroup.startDate,
+        endDate: currentGroup.endDate,
+        days: currentGroup.maxDays
+      });
+    }
+
+    // Ordenar los strikes resultantes por fecha
+    this.streaks = streaks.sort((a, b) => 
+      b.startDate.getTime() - a.startDate.getTime()
+    );
   }
 
   formatDate(date: Date): string {
