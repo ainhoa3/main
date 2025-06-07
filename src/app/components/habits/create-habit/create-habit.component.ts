@@ -190,7 +190,7 @@ export class CreateHabitComponent {
           this.submitting = false;
           this.successMessage = '¡Hábito creado con éxito!';
           setTimeout(() => {
-            this.router.navigate(['/habits']);
+           
           }, 2000);
         },
         error: (error) => {

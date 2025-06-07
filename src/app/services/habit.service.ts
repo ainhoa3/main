@@ -5,6 +5,7 @@ import { Observable, map, tap } from 'rxjs';
 import { Habit, HabitCreatingDTO, HabitUpdatingDTO, HabitPreview } from '../models/habit.model';
 import { AnimationService } from './animation.service';
 import { CacheService } from './cache.service';
+import { StreakCelebrationService } from '../components/streak-celebration/streak-celebration.service';
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +17,8 @@ export class HabitService {
     private http: HttpClient, 
     private authService: AuthService,
     private animationService: AnimationService,
-    private cacheService: CacheService
+    private cacheService: CacheService,
+    private streakCelebrationService: StreakCelebrationService
   ) { }
 
   // Create a new habit
@@ -83,14 +85,24 @@ export class HabitService {
   }
 
   // Mark a habit as done
-  markHabitAsDone(habitId: number): Observable<HabitPreview> {
+  markHabitAsDone(habitId: number): Observable<any> {
     const token = this.authService.getToken();
-    return this.http.put<HabitPreview>(`${this.apiUrl}/MarkHabitAsDone/${habitId}`, null, {
+    return this.http.get<any>(`${this.apiUrl}/MarkAsDone/${habitId}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     }).pipe(
-      tap((habit: HabitPreview) => {
-        if (habit.date && habit.streak) {
-          this.animationService.showFire({ date: habit.date, streak: habit.streak });
+      tap((habit: any) => {
+        // Update cache
+        this.cacheService.setHabit(habitId, habit);
+        
+        // Update habits list cache
+        const cachedHabits = this.cacheService.getHabitsOfTheDay();
+        if (cachedHabits) {
+          const updatedHabits = cachedHabits.map(h => h.id === habitId ? habit : h);
+          this.cacheService.setHabitsOfTheDay(updatedHabits);
+        }
+        // Show celebration if habit is completed and has date and streak
+        if (habit.done && habit.date && habit.streak) {
+          this.streakCelebrationService.showCelebration();
         }
       })
     );
