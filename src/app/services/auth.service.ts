@@ -13,7 +13,7 @@ import { StreakCelebrationService } from '../components/streak-celebration/strea
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:5112/DailyFlow/api/users';
+  private apiUrl = 'https://dailyflowapi-d6ged4dtbrdbh0d6.spaincentral-01.azurewebsites.net/DailyFlow/api/users';
   private tokenKey = 'auth_token';
   private tokenExpirationKey = 'auth_token_expiration';
   private currentUserSubject = new BehaviorSubject<UserUpdatingDTO | null>(null);
