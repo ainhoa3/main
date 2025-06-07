@@ -22,6 +22,8 @@ export class HabitService {
   // Create a new habit
   createHabit(habit: HabitCreatingDTO): Observable<Habit> {
     const token = this.authService.getToken();
+    // Limpiar solo el caché de hábitos antes de crear el nuevo hábito
+    this.cacheService.clearHabitCache();
     return this.http.post<Habit>(`${this.apiUrl}/NewHabit`, habit, {
       headers: { 'Authorization': `Bearer ${token}` }
     });

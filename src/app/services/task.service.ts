@@ -4,7 +4,7 @@ import { Observable, of, from } from 'rxjs';
 import { tap, switchMap, catchError, map } from 'rxjs/operators';
 import { Task, TaskCreatingDTO, TaskUpdatingDTO, TaskPreview } from '../models/task.model';
 import { AuthService } from './auth.service';
-import { AnimationService } from './animation.service';
+import { StreakCelebrationService } from '../components/streak-celebration/streak-celebration.service';
 import { CacheService } from './cache.service';
 
 
@@ -18,7 +18,7 @@ export class TaskService {
   constructor(
     private http: HttpClient, 
     private authService: AuthService,
-    private animationService: AnimationService,
+    private streakCelebrationService: StreakCelebrationService,
     private cacheService: CacheService
   ) { }
 
@@ -46,6 +46,8 @@ export class TaskService {
   // Create a new task with cache update
   createTask(task: TaskCreatingDTO): Observable<Task> {
     const token = this.authService.getToken();
+    // Limpiar solo el caché de tareas antes de crear la nueva tarea
+    this.cacheService.clearTaskCache();
     return this.http.post<TaskPreview>(`${this.apiUrl}/NewTask`, task, {
       headers: { 'Authorization': `Bearer ${token}` }
     }).pipe(
@@ -246,9 +248,9 @@ export class TaskService {
           this.cacheService.setTasksOfTheDay(updatedTasks);
         }
         
-        // Show fire animation if task has date and streak
+        // Mostrar celebración de racha si la tarea tiene fecha y streak
         if (task.date && task.streak) {
-          this.animationService.showFire({ date: task.date, streak: task.streak });
+          this.streakCelebrationService.showCelebration();
         }
       })
     );

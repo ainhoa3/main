@@ -48,7 +48,7 @@
             </span>
           </div>
           <div class="task-checkbox">
-            <input type="checkbox" [checked]="task.done" (change)="markAsDone(task.id, !task.done)" (click)="$event.stopPropagation()" />
+            <input type="checkbox" [checked]="task.done" (change)="markAsDone(task.id)" (click)="$event.stopPropagation()" />
           </div>
         </div>
       </div>

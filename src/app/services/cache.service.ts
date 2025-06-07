@@ -262,11 +262,43 @@ export class CacheService {
 
   // Clear cache
   clearCache(): void {
-    // Clear all localStorage items
     localStorage.clear();
-    
-    // Clear cache subject
     this.cacheSubject.next([]);
+  }
+
+  // Clear only task-related cache
+  clearTaskCache(): void {
+    // Clear task lists
+    localStorage.removeItem('tasksOfTheDay');
+    localStorage.removeItem('extra_tasks');
+    
+    // Clear individual tasks
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('task_')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    this.saveToLocalStorage();
+    this.cacheSubject.next([...this.cacheSubject.value]);
+  }
+
+  // Clear only habit-related cache
+  clearHabitCache(): void {
+    // Clear habit lists
+    localStorage.removeItem('habitsOfTheDay');
+    
+    // Clear individual habits
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('habit_')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    this.saveToLocalStorage();
+    this.cacheSubject.next([...this.cacheSubject.value]);
   }
 
   get cache$() {
