@@ -397,7 +397,8 @@ export class CalendarComponent implements OnInit {
 
     // For each day, fetch tasks
     this.calendarDays.forEach((day, index) => {
-      this.taskService.getTasksByDate(day.date).subscribe({
+      const dateStr = day.date.toISOString().split('T')[0];
+      this.taskService.getTasksByDate(dateStr).subscribe({
         next: (tasks) => {
           // Update the tasks for this day
           this.calendarDays[index].tasks = tasks;
@@ -414,26 +415,8 @@ export class CalendarComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.error('Error loading tasks:', error);
-          this.loading = false;
-        }
-      });
-    });
-
-    // For each day, fetch tasks
-    this.calendarDays.forEach((day, index) => {
-      this.taskService.getTasksByDate(day.date).subscribe({
-        next: (tasks) => {
-          // Update the tasks for this day
-          this.calendarDays[index].tasks = tasks;
-          
-          // If this is the selected day, update the selected day's tasks
-          if (this.selectedDay && this.isSameDay(this.selectedDay.date, day.date)) {
-            this.selectedDay.tasks = tasks;
-          }
-        },
-        error: (error) => {
           console.error(`Error loading tasks for ${day.date.toDateString()}:`, error);
+          this.loading = false;
         }
       });
     });

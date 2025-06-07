@@ -40,10 +40,10 @@ export class CacheService {
   }
 
   // Cache methods for tasks
-  getTasksOfTheDay(): TaskPreview[] | null {
+  getTasksOfTheDay(): Task[] | null {
     const cached = localStorage.getItem('tasksOfTheDay');
     if (cached) {
-      const parsed = JSON.parse(cached) as CacheItem<TaskPreview[]>;
+      const parsed = JSON.parse(cached) as CacheItem<Task[]>;
       if (!this.isExpired(parsed)) {
         return parsed.data;
       }
@@ -51,21 +51,29 @@ export class CacheService {
     return null;
   }
 
-  setTasksOfTheDay(tasks: TaskPreview[]): void {
-    const cacheItem: CacheItem<TaskPreview[]> = {
+  removeTask(id: number): void {
+    localStorage.removeItem(`task_${id}`);
+    this.saveToLocalStorage();
+    this.cacheSubject.next([...this.cacheSubject.value]);
+  }
+
+  setTasksOfTheDay(tasks: Task[]): void {
+    const cacheItem: CacheItem<Task[]> = {
       data: tasks,
       timestamp: Date.now(),
       ttl: this.cacheTTL,
       expiration: Date.now() + this.cacheTTL
     };
     localStorage.setItem('tasksOfTheDay', JSON.stringify(cacheItem));
+    this.saveToLocalStorage();
+    this.cacheSubject.next([...this.cacheSubject.value]);
   }
 
-  getTasksByDate(date: string): TaskPreview[] | null {
+  getTasksByDate(date: string): Task[] | null {
     const key = `tasks_by_date_${date}`;
     const cached = localStorage.getItem(key);
     if (cached) {
-      const parsed = JSON.parse(cached) as CacheItem<TaskPreview[]>;
+      const parsed = JSON.parse(cached) as CacheItem<Task[]>;
       if (!this.isExpired(parsed)) {
         return parsed.data;
       }
@@ -73,9 +81,9 @@ export class CacheService {
     return null;
   }
 
-  setTasksByDate(date: string, tasks: TaskPreview[]): void {
+  setTasksByDate(date: string, tasks: Task[]): void {
     const key = `tasks_by_date_${date}`;
-    const cacheItem: CacheItem<TaskPreview[]> = {
+    const cacheItem: CacheItem<Task[]> = {
       data: tasks,
       timestamp: Date.now(),
       ttl: this.cacheTTL,
@@ -97,6 +105,29 @@ export class CacheService {
     return null;
   }
 
+  getExtraTasks(): Task[] | null {
+    const cached = localStorage.getItem('extra_tasks');
+    if (cached) {
+      const parsed = JSON.parse(cached) as CacheItem<Task[]>;
+      if (!this.isExpired(parsed)) {
+        return parsed.data;
+      }
+    }
+    return null;
+  }
+
+  setExtraTasks(tasks: Task[]): void {
+    const cacheItem: CacheItem<Task[]> = {
+      data: tasks,
+      timestamp: Date.now(),
+      ttl: this.cacheTTL,
+      expiration: Date.now() + this.cacheTTL
+    };
+    localStorage.setItem('extra_tasks', JSON.stringify(cacheItem));
+    this.saveToLocalStorage();
+    this.cacheSubject.next([...this.cacheSubject.value]);
+  }
+
   setTask(id: number, task: Task): void {
     const cacheItem: CacheItem<Task> = {
       data: task,
@@ -105,6 +136,8 @@ export class CacheService {
       expiration: Date.now() + this.cacheTTL
     };
     localStorage.setItem(`task_${id}`, JSON.stringify(cacheItem));
+    this.saveToLocalStorage();
+    this.cacheSubject.next([...this.cacheSubject.value]);
   }
 
   // Cache methods for habits
@@ -127,6 +160,8 @@ export class CacheService {
       expiration: Date.now() + this.cacheTTL
     };
     localStorage.setItem('habitsOfTheDay', JSON.stringify(cacheItem));
+    this.saveToLocalStorage();
+    this.cacheSubject.next([...this.cacheSubject.value]);
   }
 
   getHabit(id: number): Habit | null {
@@ -148,6 +183,8 @@ export class CacheService {
       expiration: Date.now() + this.cacheTTL
     };
     localStorage.setItem(`habit_${id}`, JSON.stringify(cacheItem));
+    this.saveToLocalStorage();
+    this.cacheSubject.next([...this.cacheSubject.value]);
   }
 
   // Cache methods for user
@@ -170,6 +207,8 @@ export class CacheService {
       expiration: Date.now() + this.cacheTTL
     };
     localStorage.setItem('user', JSON.stringify(cacheItem));
+    this.saveToLocalStorage();
+    this.cacheSubject.next([...this.cacheSubject.value]);
   }
 
   getUserStreak(): number | null {
@@ -191,36 +230,16 @@ export class CacheService {
       expiration: Date.now() + this.cacheTTL
     };
     localStorage.setItem('userStreak', JSON.stringify(cacheItem));
-  }
-
-  // Cache methods for extra tasks
-  getExtraTasks(): TaskPreview[] | null {
-    const cached = localStorage.getItem('extraTasks');
-    if (cached) {
-      const parsed = JSON.parse(cached) as CacheItem<TaskPreview[]>;
-      if (!this.isExpired(parsed)) {
-        return parsed.data;
-      }
-    }
-    return null;
-  }
-
-  setExtraTasks(tasks: TaskPreview[]): void {
-    const cacheItem: CacheItem<TaskPreview[]> = {
-      data: tasks,
-      timestamp: Date.now(),
-      ttl: this.cacheTTL,
-      expiration: Date.now() + this.cacheTTL
-    };
-    localStorage.setItem('extraTasks', JSON.stringify(cacheItem));
+    this.saveToLocalStorage();
+    this.cacheSubject.next([...this.cacheSubject.value]);
   }
 
   // Cache methods for search
-  getTasksBySearch(search: string): TaskPreview[] | null {
+  getTasksBySearch(search: string): Task[] | null {
     const key = `tasks_search_${search}`;
     const cached = localStorage.getItem(key);
     if (cached) {
-      const parsed = JSON.parse(cached) as CacheItem<TaskPreview[]>;
+      const parsed = JSON.parse(cached) as CacheItem<Task[]>;
       if (!this.isExpired(parsed)) {
         return parsed.data;
       }
@@ -228,9 +247,9 @@ export class CacheService {
     return null;
   }
 
-  setTasksBySearch(search: string, tasks: TaskPreview[]): void {
+  setTasksBySearch(search: string, tasks: Task[]): void {
     const key = `tasks_search_${search}`;
-    const cacheItem: CacheItem<TaskPreview[]> = {
+    const cacheItem: CacheItem<Task[]> = {
       data: tasks,
       timestamp: Date.now(),
       ttl: this.cacheTTL,

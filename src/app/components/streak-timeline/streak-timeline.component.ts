@@ -17,10 +17,10 @@ interface StreakPeriod {
       <h3>Línea de tiempo de rachas</h3>
       <div class="timeline">
         <div *ngFor="let streak of streaks" class="streak-item">
-          <div class="streak-dot"></div>
+          <div class="streak-dot" [ngClass]="{'streak-dot-broken': streak.days === 0}"></div>
           <div class="streak-content">
             <div class="streak-dates">
-              {{ formatDate(streak.startDate) }} - {{ formatDate(streak.endDate) }}
+              {{ formatDate(streak.startDate) }}
             </div>
             <div class="streak-duration">
               {{ streak.days }} día{{ streak.days > 1 ? 's' : '' }}
@@ -32,7 +32,7 @@ interface StreakPeriod {
     </div>
     
     <div *ngIf="!streaks || streaks.length === 0" class="no-streaks">
-      No hay rachas registradas este mes.
+      No hay strikes registrados este mes.
     </div>
   `,
   styles: [`
@@ -86,6 +86,10 @@ interface StreakPeriod {
       z-index: 1;
     }
     
+    .streak-dot-broken {
+      background: #ff4444;
+    }
+    
     .streak-content {
       background: #f9f9f9;
       border-radius: 6px;
@@ -137,57 +141,19 @@ export class StreakTimelineComponent implements OnChanges {
       return;
     }
 
-    // Ordenar las fechas de los strikes
-    const dates = this.monthlyStrikes
-      .map(strike => new Date(strike.date))
-      .sort((a, b) => a.getTime() - b.getTime());
+    // Ordenar los strikes por fecha
+    const sortedStrikes = [...this.monthlyStrikes].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
 
-    if (dates.length === 0) {
-      this.streaks = [];
-      return;
-    }
+    // Mostrar cada strike como un punto individual
+    const streaks: StreakPeriod[] = sortedStrikes.map(strike => ({
+      startDate: new Date(strike.date),
+      endDate: new Date(strike.date),
+      days: strike.streak
+    }));
 
-    const streaks: StreakPeriod[] = [];
-    let currentStreak: StreakPeriod | null = null;
-    const oneDay = 24 * 60 * 60 * 1000; // milisegundos en un día
-
-    for (let i = 0; i < dates.length; i++) {
-      const currentDate = dates[i];
-      
-      if (!currentStreak) {
-        // Iniciar una nueva racha
-        currentStreak = {
-          startDate: currentDate,
-          endDate: currentDate,
-          days: 1
-        };
-      } else {
-        const prevDate = new Date(dates[i - 1]);
-        const diffDays = Math.round(Math.abs((currentDate.getTime() - prevDate.getTime()) / oneDay));
-        
-        if (diffDays === 1) {
-          // Extender la racha actual
-          currentStreak.endDate = currentDate;
-          currentStreak.days++;
-        } else if (diffDays > 1) {
-          // Guardar la racha actual y comenzar una nueva
-          streaks.push({...currentStreak});
-          currentStreak = {
-            startDate: currentDate,
-            endDate: currentDate,
-            days: 1
-          };
-        }
-        // Si diffDays es 0, es el mismo día, lo ignoramos
-      }
-    }
-
-    // Asegurarse de agregar la última racha
-    if (currentStreak) {
-      streaks.push(currentStreak);
-    }
-
-    this.streaks = streaks.sort((a, b) => b.days - a.days);
+    this.streaks = streaks;
   }
 
   formatDate(date: Date): string {

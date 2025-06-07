@@ -8,6 +8,7 @@ import { AuthService } from './services/auth.service';
 import { HeaderComponent } from './components/header/header.component';
 import { PageTitleService } from './services/page-title.service';
 import { MobileNavbarComponent } from './components/mobile-navbar/mobile-navbar.component';
+import { StreakCelebrationComponent } from './components/streak-celebration/streak-celebration.component';
 
 @Component({
   selector: 'app-root',
@@ -17,7 +18,8 @@ import { MobileNavbarComponent } from './components/mobile-navbar/mobile-navbar.
     RouterOutlet, 
     SidebarComponent, 
     HeaderComponent, 
-    MobileNavbarComponent
+    MobileNavbarComponent,
+    StreakCelebrationComponent
   ],
   template: `
     <div class="app-container">
@@ -43,6 +45,7 @@ import { MobileNavbarComponent } from './components/mobile-navbar/mobile-navbar.
       </div>
       
       <app-mobile-navbar *ngIf="isMobile && isLoggedIn && !isLandingPage"></app-mobile-navbar>
+      <app-streak-celebration></app-streak-celebration>
     </div>
   `,
   styles: [`

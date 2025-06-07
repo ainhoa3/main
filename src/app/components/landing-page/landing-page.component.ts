@@ -5,8 +5,9 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { AuthService } from '../../services/auth.service';
 import { CredencialesUserDTO } from '../../models/user.model';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { faUser, faLock, faEnvelope, faArrowRight, faEye, faEyeSlash, faCheck, faXmark, faTasks, faChartLine, faCalendarCheck } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faLock, faEnvelope, faArrowRight, faEye, faEyeSlash, faCheck, faXmark, faTasks, faChartLine, faCalendarCheck, faCookieBite } from '@fortawesome/free-solid-svg-icons';
 import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
+
 @Component({
   selector: 'app-landing-page',
   standalone: true,
@@ -67,8 +68,24 @@ import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
       </main>
 
       <footer class="footer">
-        <p>© 2025 DailyFlow - Todos los derechos reservados</p>
+        <p> 2025 DailyFlow - Todos los derechos reservados</p>
       </footer>
+
+      <!-- Cookie Consent Banner -->
+      <div class="cookie-consent" *ngIf="!cookiesAccepted">
+        <div class="cookie-content">
+          <div class="cookie-icon">
+            <fa-icon [icon]="faCookieBite"></fa-icon>
+          </div>
+          <div class="cookie-text">
+            <p>Utilizamos cookies propias y de terceros para mejorar tu experiencia en nuestro sitio web. Al hacer clic en "Aceptar", aceptas el uso de todas las cookies según nuestra <a href="/politica-cookies" target="_blank">Política de Cookies</a>.</p>
+          </div>
+          <div class="cookie-buttons">
+            <button class="btn btn-outline" (click)="rejectCookies()">Rechazar</button>
+            <button class="btn btn-primary" (click)="acceptCookies()">Aceptar</button>
+          </div>
+        </div>
+      </div>
 
       <!-- Login Modal -->
       <div class="modal-backdrop" *ngIf="showLoginModal" (click)="closeModals($event)">
@@ -409,6 +426,62 @@ import { FaIconLibrary } from '@fortawesome/angular-fontawesome';
         grid-template-columns: 1fr;
       }
     }
+
+    .cookie-consent {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #2c3e50;
+      color: white;
+      padding: 15px 20px;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+    }
+    .cookie-content {
+      display: flex;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+    }
+    .cookie-icon {
+      font-size: 24px;
+      margin-right: 15px;
+      color: #3498db;
+    }
+    .cookie-text {
+      flex: 1;
+      margin-right: 20px;
+    }
+    .cookie-text a {
+      color: #3498db;
+      text-decoration: none;
+    }
+    .cookie-text a:hover {
+      text-decoration: underline;
+    }
+    .cookie-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    @media (max-width: 768px) {
+      .cookie-content {
+        flex-direction: column;
+        text-align: center;
+      }
+      .cookie-icon {
+        margin: 0 0 10px 0;
+      }
+      .cookie-text {
+        margin: 0 0 15px 0;
+      }
+      .cookie-buttons {
+        width: 100%;
+        justify-content: center;
+      }
+    }
   `]
 })
 export class LandingPageComponent implements OnInit {
@@ -424,6 +497,9 @@ export class LandingPageComponent implements OnInit {
   faTasks = faTasks;
   faChartLine = faChartLine;
   faCalendarCheck = faCalendarCheck;
+  faCookieBite = faCookieBite;
+
+  cookiesAccepted: boolean = false;
 
   // Form controls
   loginForm: FormGroup;
@@ -446,7 +522,8 @@ export class LandingPageComponent implements OnInit {
     this.library.addIcons(
       faUser, faLock, faEnvelope, faArrowRight, 
       faEye, faEyeSlash, faCheck, faXmark, 
-      faTasks, faChartLine, faCalendarCheck
+      faTasks, faChartLine, faCalendarCheck,
+      faCookieBite
     );
 
     // Initialize forms
@@ -463,7 +540,24 @@ export class LandingPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Component initialization
+    this.checkCookieConsent();
+  }
+
+  checkCookieConsent(): void {
+    const consent = localStorage.getItem('cookieConsent');
+    this.cookiesAccepted = consent === 'accepted';
+  }
+
+  acceptCookies(): void {
+    localStorage.setItem('cookieConsent', 'accepted');
+    this.cookiesAccepted = true;
+    // Aquí podrías añadir el código para cargar servicios de terceros como Google Analytics
+  }
+
+  rejectCookies(): void {
+    localStorage.setItem('cookieConsent', 'rejected');
+    this.cookiesAccepted = true; // Ocultar el banner después de rechazar
+    // Aquí podrías añadir código para deshabilitar cookies no esenciales
   }
 
   closeModals(event: MouseEvent): void {

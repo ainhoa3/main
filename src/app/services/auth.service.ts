@@ -1,6 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { CookieService } from './cookie.service';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { UserUpdatingDTO } from '../models/user.model';
@@ -8,21 +7,23 @@ import { StrikeDTO } from '../models/strike.model';
 import { CredencialesUserDTO, AuthResponse, User } from '../models/user.model';
 import { jwtDecode } from 'jwt-decode';
 import { CacheService } from './cache.service';
+import { StreakCelebrationService } from '../components/streak-celebration/streak-celebration.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'https://dailyflowapi-d6ged4dtbrdbh0d6.spaincentral-01.azurewebsites.net/DailyFlow/api/users';
+  private apiUrl = 'http://localhost:5112/DailyFlow/api/users';
   private tokenKey = 'auth_token';
+  private tokenExpirationKey = 'auth_token_expiration';
   private currentUserSubject = new BehaviorSubject<UserUpdatingDTO | null>(null);
   
   currentUser$ = this.currentUserSubject.asObservable();
   
   constructor(
     private http: HttpClient, 
-    private cookieService: CookieService,
-    private cacheService: CacheService
+    private cacheService: CacheService,
+    @Inject(StreakCelebrationService) private streakCelebrationService: StreakCelebrationService
   ) {
     this.initializeUser();
   }
@@ -54,6 +55,11 @@ export class AuthService {
 
   getCurrentUser(): Observable<UserUpdatingDTO | null> {
     return this.currentUser$;
+  }
+
+  getCurrentUserId(): number | null {
+    const currentUser = this.currentUserSubject.value;
+    return currentUser?.id || null;
   }
 
   private initializeUser(): void {
@@ -168,11 +174,24 @@ export class AuthService {
     );
   }
 
-  addStreak(): Observable<number> {
+  addStreak(): Observable<{ date: string, streak: number, userId: string }> {
     const token = this.getToken();
-    return this.http.get<number>(`${this.apiUrl}/AddStrike`, {
+    return this.http.get<{ date: string, streak: number, userId: string }>(`${this.apiUrl}/AddStrike`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      tap(response => {
+        // Mostrar celebración cuando se complete una racha
+        this.streakCelebrationService.showCelebration();
+        
+        // Actualizar el usuario en caché con la nueva racha
+        const currentUser = this.cacheService.getUser();
+        if (currentUser) {
+          const updatedUser = { ...currentUser, streak: response.streak };
+          this.cacheService.setUser(updatedUser);
+          this.currentUserSubject.next(updatedUser);
+        }
+      })
+    );
   }
 
   deleteUser(): Observable<void> {
@@ -198,22 +217,26 @@ export class AuthService {
   }
 
   saveToken(token: string, expirationDate?: string): void {
+    // Guardar el token en localStorage
+    localStorage.setItem(this.tokenKey, token);
+    
+    // Si hay una fecha de expiración, guardarla también
     if (expirationDate) {
-      // Calculate days until expiration
-      const expDate = new Date(expirationDate);
-      const currentDate = new Date();
-      const daysUntilExpiration = Math.ceil((expDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
-      
-      // Save token with calculated expiration
-      this.cookieService.setCookie(this.tokenKey, token, daysUntilExpiration);
-    } else {
-      // Fallback: save token for 7 days if no expiration provided
-      this.cookieService.setCookie(this.tokenKey, token, 7);
+      localStorage.setItem(this.tokenExpirationKey, expirationDate);
     }
   }
 
   getToken(): string | null {
-    return this.cookieService.getCookie(this.tokenKey);
+    // Verificar si el token ha expirado
+    const expiration = localStorage.getItem(this.tokenExpirationKey);
+    if (expiration) {
+      const expirationDate = new Date(expiration);
+      if (expirationDate <= new Date()) {
+        this.logout();
+        return null;
+      }
+    }
+    return localStorage.getItem(this.tokenKey);
   }
 
   isAuthenticated(): boolean {
@@ -232,27 +255,20 @@ export class AuthService {
   }
 
   logout(): void {
-    // Clear all cookies
-    this.cookieService.deleteAllCookies();
+    // Eliminar solo los items específicos de autenticación
+    localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.tokenExpirationKey);
     
-    // Clear all storage
-    localStorage.clear();
-    sessionStorage.clear();
-    
-    // Clear cache service
+    // Limpiar el servicio de caché
     this.cacheService.clearCache();
     
-    // Clear current user subject
+    // Limpiar el usuario actual
     this.currentUserSubject.next(null);
     
-    // Clear any remaining token
-    this.cookieService.deleteCookie(this.tokenKey);
-    
-    // Ensure all subscriptions are unsubscribed
+    // Completar el subject
     this.currentUserSubject.complete();
     
-    // Clear any other storage
-    window.sessionStorage.clear();
-    window.localStorage.clear();
+    // Limpiar sessionStorage por si acaso
+    sessionStorage.clear();
   }
 }

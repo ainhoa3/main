@@ -10,7 +10,7 @@ import { CacheService } from './cache.service';
   providedIn: 'root'
 })
 export class HabitService {
-  private apiUrl = 'https://dailyflowapi-d6ged4dtbrdbh0d6.spaincentral-01.azurewebsites.net/DailyFlow/api/Habits';
+  private apiUrl = 'http://localhost:5112/DailyFlow/api/Habits';
 
   constructor(
     private http: HttpClient, 
