@@ -338,32 +338,29 @@ export class StreakMetricsComponent implements OnInit, AfterViewInit, OnDestroy 
       // Calcular racha mensual
       if (!monthlyAverages[monthKey]) {
         monthlyAverages[monthKey] = { total: 0, count: 0, max: 0 };
-        currentYearlyStreak = 0; // Reiniciar racha mensual
       }
+
+      // Actualizar el máximo mensual con el valor real del strike
+      monthlyAverages[monthKey].max = Math.max(monthlyAverages[monthKey].max, strike.streak);
+      maxYearlyStreak = Math.max(maxYearlyStreak, strike.streak);
       
-      if (lastDate) {
-        const diffDays = Math.round(Math.abs((date.getTime() - lastDate.getTime()) / oneDay));
-        if (diffDays === 1) {
-          currentYearlyStreak++;
-        } else {
-          currentYearlyStreak = 1;
-        }
-      } else {
-        currentYearlyStreak = 1;
-      }
-      
-      monthlyAverages[monthKey].max = Math.max(monthlyAverages[monthKey].max, currentYearlyStreak);
-      maxYearlyStreak = Math.max(maxYearlyStreak, currentYearlyStreak);
-      
-      // Actualizar estadísticas mensuales
+      // Actualizar estadísticas mensuales usando el valor real del strike
       monthlyAverages[monthKey].total += strike.streak;
       monthlyAverages[monthKey].count++;
       
-      // Actualizar estadísticas anuales
+      // Actualizar estadísticas anuales usando el valor real del strike
       yearlyTotal += strike.streak;
       yearlyCount++;
       
+      // Actualizar la racha actual del usuario
+      this.currentStreak = strike.streak;
+      
       lastDate = date;
+    }
+
+    // Si no hay strikes, la racha actual es 0
+    if (!sortedStrikes.length) {
+      this.currentStreak = 0;
     }
 
     // Calcular promedios y preparar datos para el gráfico

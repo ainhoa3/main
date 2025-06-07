@@ -1,10 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { AuthService } from './auth.service';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, of, from } from 'rxjs';
+import { tap, switchMap, catchError, map } from 'rxjs/operators';
 import { Task, TaskCreatingDTO, TaskUpdatingDTO, TaskPreview } from '../models/task.model';
-import { AnimationService } from './animation.service';
-import { CacheService, CacheItem } from './cache.service';
+import { AuthService } from './auth.service';
+import { StreakCelebrationService } from '../components/streak-celebration/streak-celebration.service';
+import { CacheService } from './cache.service';
+
+
 
 @Injectable({
   providedIn: 'root'
@@ -15,50 +18,174 @@ export class TaskService {
   constructor(
     private http: HttpClient, 
     private authService: AuthService,
-    private animationService: AnimationService,
+    private streakCelebrationService: StreakCelebrationService,
     private cacheService: CacheService
   ) { }
 
-  // Create a new task
+  // Transforma un TaskPreview en un Task completo
+  private transformTaskPreview(taskPreview: TaskPreview): Task {
+    // Si dueDate es null o undefined, usamos la fecha actual
+    const dueDate = taskPreview.dueDate ? new Date(taskPreview.dueDate) : new Date();
+    const dateStr = dueDate.toISOString().split('T')[0];
+
+    return {
+      id: taskPreview.id,
+      title: taskPreview.title,
+      description: taskPreview.description,
+      environment: taskPreview.environment,
+      dueDate: dueDate,
+      importance: taskPreview.importance,
+      done: taskPreview.done,
+      priority: taskPreview.priority,
+      scheduled: true, // Siempre true ya que siempre tenemos una fecha
+      date: dateStr,
+      streak: taskPreview.streak || 0
+    };
+  }
+
+  // Create a new task with cache update
   createTask(task: TaskCreatingDTO): Observable<Task> {
     const token = this.authService.getToken();
-    return this.http.post<Task>(`${this.apiUrl}/NewTask`, task, {
+    // Limpiar solo el caché de tareas antes de crear la nueva tarea
+    this.cacheService.clearTaskCache();
+    return this.http.post<TaskPreview>(`${this.apiUrl}/NewTask`, task, {
       headers: { 'Authorization': `Bearer ${token}` }
-    });
+    }).pipe(
+      map(taskPreview => this.transformTaskPreview(taskPreview)),
+      tap(newTask => {
+        // Actualizar la caché con la nueva tarea
+        this.cacheService.setTask(newTask.id, newTask);
+        
+        const cachedTasks = this.cacheService.getTasksOfTheDay();
+        if (cachedTasks) {
+          this.cacheService.setTasksOfTheDay([...cachedTasks, newTask]);
+        } else {
+          this.cacheService.setTasksOfTheDay([newTask]);
+        }
+      })
+    );
   }
 
   // Get tasks of the day preview
-  getTasksOfTheDayPreview(): Observable<TaskPreview[]> {
+  getTasksOfTheDayPreview(): Observable<Task[]> {
     const cachedTasks = this.cacheService.getTasksOfTheDay();
     if (cachedTasks) {
-      return new Observable<TaskPreview[]>(observer => {
-        observer.next(cachedTasks);
-        observer.complete();
-      });
+      return of(cachedTasks);
     }
 
     const token = this.authService.getToken();
     return this.http.get<TaskPreview[]>(`${this.apiUrl}/GetTasksOfTheDayPreview`, {
       headers: { 'Authorization': `Bearer ${token}` }
     }).pipe(
+      map(tasks => tasks.map(taskPreview => this.transformTaskPreview(taskPreview))),
       tap(tasks => {
-        // Cache each task preview using API values directly
-        tasks.forEach(taskPreview => {
-          this.cacheService.setTask(taskPreview.id, {
-            id: taskPreview.id,
-            title: taskPreview.title,
-            description: taskPreview.description,
-            environment: taskPreview.environment,
-            dueDate: taskPreview.dueDate,
-            importance: taskPreview.importance,
-            done: taskPreview.done,
-            priority: taskPreview.priority,
-            scheduled: taskPreview.dueDate !== null,
-            date: taskPreview.dueDate ? taskPreview.dueDate.toISOString().split('T')[0] : null,
-            streak: taskPreview.streak || 0
-          });
+        // Cache each task
+        tasks.forEach(task => {
+          this.cacheService.setTask(task.id, task);
         });
         this.cacheService.setTasksOfTheDay(tasks);
+      })
+    );
+  }
+
+  // Get a single task by ID with cache support
+  getTaskById(id: number): Observable<Task> {
+    const cachedTask = this.cacheService.getTask(id);
+    if (cachedTask) {
+      return of(cachedTask);
+    }
+    
+    const token = this.authService.getToken();
+    return this.http.get<TaskPreview>(`${this.apiUrl}/GetATask/${id}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).pipe(
+      map(taskPreview => this.transformTaskPreview(taskPreview)),
+      tap(task => {
+        // Guardar en caché
+        this.cacheService.setTask(id, task);
+      })
+    );
+  }
+
+  // Get tasks by date
+  getTasksByDate(date: string): Observable<Task[]> {
+    const cachedTasks = this.cacheService.getTasksByDate(date);
+    if (cachedTasks) {
+      return of(cachedTasks);
+    }
+
+    const token = this.authService.getToken();
+    return this.http.get<TaskPreview[]>(`${this.apiUrl}/GetTasksByDatePreview/${date}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).pipe(
+      map(tasks => tasks.map(taskPreview => this.transformTaskPreview(taskPreview))),
+      tap(tasks => {
+        // Cache each task
+        tasks.forEach(task => {
+          this.cacheService.setTask(task.id, task);
+        });
+        this.cacheService.setTasksByDate(date, tasks);
+      })
+    );
+  }
+
+  // Get extra tasks
+  getExtraTasks(): Observable<Task[]> {
+    const cachedTasks = this.cacheService.getExtraTasks();
+    if (cachedTasks) {
+      return of(cachedTasks);
+    }
+
+    const token = this.authService.getToken();
+    return this.http.get<TaskPreview[]>(`${this.apiUrl}/GetExtraTasks`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).pipe(
+      map(tasks => tasks.map(taskPreview => this.transformTaskPreview(taskPreview))),
+      tap(tasks => {
+        // Cache each task
+        tasks.forEach(task => {
+          this.cacheService.setTask(task.id, task);
+        });
+        this.cacheService.setExtraTasks(tasks);
+      })
+    );
+  }
+
+  // Get all tasks with cache support
+  getTasks(forceRefresh = false): Observable<Task[]> {
+    return this.authService.getCurrentUser().pipe(
+      switchMap(currentUser => {
+        if (!currentUser || !currentUser.id) {
+          return this.http.get<TaskPreview[]>(`${this.apiUrl}`, {
+            headers: { 'Authorization': `Bearer ${this.authService.getToken()}` }
+          }).pipe(
+            map(tasks => tasks.map(taskPreview => this.transformTaskPreview(taskPreview)))
+          );
+        }
+
+        // Si no se fuerza la actualización y hay datos en caché, devolverlos
+        if (!forceRefresh) {
+          const cachedTasks = this.cacheService.getTasksOfTheDay();
+          if (cachedTasks) {
+            return of(cachedTasks);
+          }
+        }
+
+        // Si no hay caché o se fuerza la actualización, hacer la petición
+        const token = this.authService.getToken();
+        return this.http.get<TaskPreview[]>(`${this.apiUrl}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).pipe(
+          map(tasks => tasks.map(taskPreview => this.transformTaskPreview(taskPreview))),
+          tap(tasks => {
+            // Cache each task
+            tasks.forEach(task => {
+              this.cacheService.setTask(task.id, task);
+            });
+            this.cacheService.setTasksOfTheDay(tasks);
+          }),
+          catchError(() => of([]))
+        );
       })
     );
   }
@@ -67,31 +194,38 @@ export class TaskService {
   getTask(id: number): Observable<Task> {
     const cachedTask = this.cacheService.getTask(id);
     if (cachedTask) {
-      return new Observable<Task>(observer => {
-        observer.next(cachedTask);
-        observer.complete();
-      });
+      return of(cachedTask);
     }
 
     const token = this.authService.getToken();
     return this.http.get<TaskPreview>(`${this.apiUrl}/GetATask/${id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     }).pipe(
-      map(taskPreview => ({
-        id: taskPreview.id,
-        title: taskPreview.title,
-        description: taskPreview.description,
-        environment: taskPreview.environment,
-        dueDate: taskPreview.dueDate,
-        importance: taskPreview.importance,
-        done: taskPreview.done,
-        priority: taskPreview.priority,
-        scheduled: taskPreview.dueDate !== null,
-        date: taskPreview.dueDate ? taskPreview.dueDate.toISOString().split('T')[0] : null,
-        streak: taskPreview.streak || 0
-      })),
+      map(taskPreview => this.transformTaskPreview(taskPreview)),
       tap(task => {
+        // Update cache
         this.cacheService.setTask(id, task);
+      })
+    );
+  }
+
+  // Toggle task completion status with cache update
+  toggleTaskCompletion(id: number, completed: boolean): Observable<Task> {
+    const token = this.authService.getToken();
+    return this.http.get<TaskPreview>(`${this.apiUrl}/ToggleTaskCompletion/${id}?completed=${completed}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).pipe(
+      map(taskPreview => this.transformTaskPreview(taskPreview)),
+      tap(task => {
+        // Update cache
+        this.cacheService.setTask(id, task);
+        
+        // Update tasks list cache
+        const cachedTasks = this.cacheService.getTasksOfTheDay();
+        if (cachedTasks) {
+          const updatedTasks = cachedTasks.map(t => t.id === id ? task : t);
+          this.cacheService.setTasksOfTheDay(updatedTasks);
+        }
       })
     );
   }
@@ -99,109 +233,30 @@ export class TaskService {
   // Mark a task as done
   markTaskAsDone(id: number): Observable<Task> {
     const token = this.authService.getToken();
-    return this.http.get<Task>(`${this.apiUrl}/MarkAsDone/${id}`, {
+    return this.http.get<TaskPreview>(`${this.apiUrl}/MarkAsDone/${id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     }).pipe(
-      tap((task: Task) => {
+      map(taskPreview => this.transformTaskPreview(taskPreview)),
+      tap(task => {
         // Update cache
         this.cacheService.setTask(id, task);
         
-        // Show fire animation if task has date and streak
+        // Update tasks list cache
+        const cachedTasks = this.cacheService.getTasksOfTheDay();
+        if (cachedTasks) {
+          const updatedTasks = cachedTasks.map(t => t.id === id ? task : t);
+          this.cacheService.setTasksOfTheDay(updatedTasks);
+        }
+        
+        // Mostrar celebración de racha si la tarea tiene fecha y streak
         if (task.date && task.streak) {
-          this.animationService.showFire({ date: task.date, streak: task.streak });
+          this.streakCelebrationService.showCelebration();
         }
       })
     );
   }
 
-  // Search tasks by keyword
-  searchTasks(search: string): Observable<TaskPreview[]> {
-    const token = this.authService.getToken();
-    return this.http.get<TaskPreview[]>(`${this.apiUrl}/Search/${search}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-  }
-
-  // Get tasks by date
-  getTasksByDate(date: Date): Observable<TaskPreview[]> {
-    const formattedDate = new Date(date).toLocaleDateString('en-CA');
-    const cachedTasks = this.cacheService.getTasksByDate(formattedDate);
-    
-    if (cachedTasks) {
-      return new Observable<TaskPreview[]>(observer => {
-        observer.next(cachedTasks);
-        observer.complete();
-      });
-    }
-
-    const token = this.authService.getToken();
-    return this.http.get<TaskPreview[]>(`${this.apiUrl}/GetTasksByDatePreview/${formattedDate}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    }).pipe(
-      tap(tasks => {
-        this.cacheService.setTasksOfTheDay(tasks);
-      })
-    );
-  }
-
-  // Get extra tasks
-  getExtraTasks(): Observable<TaskPreview[]> {
-    // First try to get from local storage
-    const localStorageTasks = localStorage.getItem('extraTasks');
-    if (localStorageTasks) {
-      try {
-        const parsed = JSON.parse(localStorageTasks) as CacheItem<TaskPreview[]>;
-        if (!this.cacheService.isExpired(parsed)) {
-          // If data is valid, use it and return
-          return new Observable<TaskPreview[]>(observer => {
-            observer.next(parsed.data);
-            observer.complete();
-          });
-        }
-      } catch (error) {
-        console.error('Error parsing extra tasks from localStorage:', error);
-        // If there's an error, continue to fetch from API
-      }
-    }
-
-    // If not in localStorage or expired, fetch from API
-    const token = this.authService.getToken();
-    return this.http.get<TaskPreview[]>(`${this.apiUrl}/GetExtraTasks`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    }).pipe(
-      map(apiTasks => {
-        // Use API data directly
-        return apiTasks.map(taskPreview => ({
-          id: taskPreview.id,
-          title: taskPreview.title,
-          description: taskPreview.description,
-          environment: taskPreview.environment,
-          dueDate: taskPreview.dueDate,
-          importance: taskPreview.importance,
-          done: taskPreview.done,
-          priority: taskPreview.priority,
-          scheduled: taskPreview.dueDate !== null,
-          date: taskPreview.dueDate ? taskPreview.dueDate.toISOString().split('T')[0] : null,
-          streak: taskPreview.streak || 0
-        }));
-      }),
-      tap(tasks => {
-        // Store in localStorage
-        const cacheItem: CacheItem<TaskPreview[]> = {
-          data: tasks,
-          timestamp: Date.now(),
-          ttl: this.cacheService.cacheTTL,
-          expiration: Date.now() + this.cacheService.cacheTTL
-        };
-        localStorage.setItem('extraTasks', JSON.stringify(cacheItem));
-
-        // Store in CacheService
-        this.cacheService.setExtraTasks(tasks);
-      })
-    );
-  }
-
-  // Update a task
+  // Update a task with cache update
   updateTask(id: number, task: TaskUpdatingDTO): Observable<Task> {
     const token = this.authService.getToken();
     return this.http.put<Task>(`${this.apiUrl}/UpdateTask/${id}`, task, {
@@ -209,32 +264,54 @@ export class TaskService {
     }).pipe(
       tap(updatedTask => {
         // Update cache
-        this.cacheService.setTask(id, {
-          id: updatedTask.id,
-          title: updatedTask.title,
-          description: updatedTask.description,
-          environment: updatedTask.environment,
-          dueDate: new Date(updatedTask.dueDate),
-          importance: updatedTask.importance,
-          done: updatedTask.done,
-          priority: 0,
-          scheduled: updatedTask.dueDate !== null,
-          date: updatedTask.dueDate ? updatedTask.dueDate.toISOString().split('T')[0] : null,
-          streak: 0
-        });
+        this.cacheService.setTask(id, updatedTask);
+        
+        // Update tasks list cache
+        const cachedTasks = this.cacheService.getTasksOfTheDay();
+        if (cachedTasks) {
+          const updatedTasks = cachedTasks.map(t => t.id === id ? updatedTask : t);
+          this.cacheService.setTasksOfTheDay(updatedTasks);
+        }
       })
     );
   }
 
-  // Delete a task
+  // Delete a task with cache update
   deleteTask(id: number): Observable<void> {
     const token = this.authService.getToken();
     return this.http.delete<void>(`${this.apiUrl}/DeleteTask/${id}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     }).pipe(
       tap(() => {
-        // Remove task from cache
-        this.cacheService.clearCache();
+        // Remove from cache
+        this.cacheService.removeTask(id);
+        
+        // Update tasks list cache
+        const cachedTasks = this.cacheService.getTasksOfTheDay();
+        if (cachedTasks) {
+          const updatedTasks = cachedTasks.filter(t => t.id !== id);
+          this.cacheService.setTasksOfTheDay(updatedTasks);
+        }
+      })
+    );
+  }
+
+  // Search tasks by keyword
+  searchTasks(search: string): Observable<Task[]> {
+    // Verificar en caché
+    const cachedTasks = this.cacheService.getTasksBySearch(search);
+    if (cachedTasks) {
+      return of(cachedTasks);
+    }
+
+    const token = this.authService.getToken();
+    return this.http.get<TaskPreview[]>(`${this.apiUrl}/Search/${search}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).pipe(
+      map(tasks => tasks.map(taskPreview => this.transformTaskPreview(taskPreview))),
+      tap(tasks => {
+        // Guardar en caché
+        this.cacheService.setTasksBySearch(search, tasks);
       })
     );
   }

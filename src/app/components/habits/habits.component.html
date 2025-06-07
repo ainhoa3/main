@@ -30,8 +30,8 @@
     </div>
 
     <div class="habits-list">
-      <div class="habit-item" *ngFor="let habit of filteredHabits" (click)="openHabitDetail(habit); $event.stopPropagation()">
-        <div class="habit-info">
+      <div class="habit-item" *ngFor="let habit of filteredHabits">
+        <div class="habit-info" (click)="openHabitDetail(habit); $event.stopPropagation()">
           <h3 class="habit-title">{{ habit.title }}</h3>
           <div class="habit-meta">
             <span class="environment" [ngClass]="getEnvironmentClass(convertEnvironmentToNumber(habit._Environment))">
@@ -47,7 +47,7 @@
             </span>
           </div>
           <div class="habit-checkbox">
-            <input type="checkbox" [checked]="habit.done" (change)="$event.stopPropagation(); markHabitAsDone(habit.id)">
+            <input type="checkbox" [checked]="habit.done" (change)="markHabitAsDone(habit.id); $event.stopPropagation()">
           </div>
         </div>
       </div>

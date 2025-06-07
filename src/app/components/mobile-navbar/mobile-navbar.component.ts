@@ -2,23 +2,30 @@ import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { FileCheckIconComponent } from '../../shared/components/file-check-icon/file-check-icon.component';
-import { ClockIconComponent } from '../../shared/components/clock-icon/clock-icon.component';
-import { CalendarCheckIconComponent } from '../../shared/components/calendar-check-icon/calendar-check-icon.component';
-import { SettingsGearIconComponent } from '../../shared/components/settings-gear-icon/settings-gear-icon.component';
-import { LayoutPanelTopIconComponent } from '../../shared/components/layout-panel-top-icon/layout-panel-top-icon.component';
+import { AuthService } from '../../services/auth.service';
+import { 
+  FileCheckIconComponent, 
+  ClockIconComponent,
+  CalendarCheckIconComponent,
+  SettingsGearIconComponent,
+  LayoutPanelTopIconComponent,
+  SearchIconComponent,
+  LogoutIconComponent
+} from '../../shared/components';
 
 @Component({
   selector: 'app-mobile-navbar',
   standalone: true,
   imports: [
     CommonModule, 
-    RouterModule, 
+    RouterModule,
     FileCheckIconComponent, 
     ClockIconComponent,
     CalendarCheckIconComponent,
     SettingsGearIconComponent,
-    LayoutPanelTopIconComponent
+    LayoutPanelTopIconComponent,
+    SearchIconComponent,
+    LogoutIconComponent
   ],
   template: `
     <nav class="mobile-navbar">
@@ -31,7 +38,6 @@ import { LayoutPanelTopIconComponent } from '../../shared/components/layout-pane
         <app-layout-panel-top-icon class="icon" [size]="24" [isHovered]="activeLink === 'dashboard'"></app-layout-panel-top-icon>
         <span class="nav-text">Inicio</span>
       </a>
-      
       <a 
         routerLink="/tasks" 
         [class.active]="currentUrl === '/tasks'" 
@@ -41,7 +47,6 @@ import { LayoutPanelTopIconComponent } from '../../shared/components/layout-pane
         <app-file-check-icon class="icon" [size]="24" [isHovered]="activeLink === 'tasks'"></app-file-check-icon>
         <span class="nav-text">Tareas</span>
       </a>
-      
       <a 
         routerLink="/habits" 
         [class.active]="currentUrl === '/habits'" 
@@ -51,7 +56,6 @@ import { LayoutPanelTopIconComponent } from '../../shared/components/layout-pane
         <app-clock-icon class="icon" [size]="24" [isHovered]="activeLink === 'habits'"></app-clock-icon>
         <span class="nav-text">Hábitos</span>
       </a>
-      
       <a 
         routerLink="/calendar" 
         [class.active]="currentUrl === '/calendar'" 
@@ -61,7 +65,6 @@ import { LayoutPanelTopIconComponent } from '../../shared/components/layout-pane
         <app-calendar-check-icon class="icon" [size]="24" [isHovered]="activeLink === 'calendar'"></app-calendar-check-icon>
         <span class="nav-text">Calendario</span>
       </a>
-      
       <a 
         routerLink="/settings" 
         [class.active]="currentUrl === '/settings'" 
@@ -70,6 +73,22 @@ import { LayoutPanelTopIconComponent } from '../../shared/components/layout-pane
       >
         <app-settings-gear-icon class="icon" [size]="24" [isHovered]="activeLink === 'settings'"></app-settings-gear-icon>
         <span class="nav-text">Ajustes</span>
+      </a>
+      <a 
+        routerLink="/search" 
+        [class.active]="currentUrl === '/search'" 
+        class="nav-item"
+        (click)="setActiveLink('search')"
+      >
+        <app-search-icon class="icon" [size]="24" [isHovered]="activeLink === 'search'"></app-search-icon>
+        <span class="nav-text">Buscar</span>
+      </a>
+      <a 
+        (click)="logout()" 
+        class="nav-item"
+      >
+        <app-logout-icon class="icon" [size]="24" [isHovered]="activeLink === 'logout'"></app-logout-icon>
+        <span class="nav-text">Cerrar sesión</span>
       </a>
     </nav>
   `,
@@ -89,9 +108,7 @@ import { LayoutPanelTopIconComponent } from '../../shared/components/layout-pane
       box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      /* Manejo seguro para dispositivos con muescas */
       padding-bottom: env(safe-area-inset-bottom, 0);
-      /* Asegurar que esté siempre visible */
       position: fixed !important;
       bottom: 0 !important;
       left: 0 !important;
@@ -123,49 +140,6 @@ import { LayoutPanelTopIconComponent } from '../../shared/components/layout-pane
       opacity: 1;
       font-weight: 500;
     }
-    
-    .nav-item .icon {
-      margin-bottom: 3px;
-      transition: transform 0.2s ease;
-    }
-    
-    .nav-item.active .icon {
-      transform: translateY(-2px);
-    }
-    
-    .nav-text {
-      font-size: 0.65rem;
-      margin-top: 2px;
-      transition: font-weight 0.2s ease;
-    }
-    
-    .nav-item.active .nav-text {
-      font-weight: 600;
-    }
-    
-    /* Ajustes para dispositivos más pequeños */
-    @media (max-width: 360px) {
-      .nav-text {
-        font-size: 0.6rem;
-      }
-      
-      .nav-item .icon {
-        transform: scale(0.9);
-      }
-    }
-    
-    /* Asegurar que la barra de navegación no se superponga con el área segura en iOS */
-    @supports (padding: max(0px)) {
-      .mobile-navbar {
-        padding-bottom: max(env(safe-area-inset-bottom, 10px), 10px);
-      }
-    }
-
-    @media (min-width: 769px) {
-      .mobile-navbar {
-        display: none;
-      }
-    }
   `]
 })
 export class MobileNavbarComponent {
@@ -173,7 +147,10 @@ export class MobileNavbarComponent {
   activeLink: string = 'dashboard';
   isMobile: boolean = false;
 
-  constructor(private router: Router) {
+  constructor(
+    private router: Router,
+    private authService: AuthService
+  ) {
     this.checkIfMobile();
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
@@ -207,6 +184,17 @@ export class MobileNavbarComponent {
       this.activeLink = 'calendar';
     } else if (url.includes('settings')) {
       this.activeLink = 'settings';
+    } else if (url.includes('search')) {
+      this.activeLink = 'search';
     }
+  }
+
+  search(): void {
+    this.router.navigate(['/search']);
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 }

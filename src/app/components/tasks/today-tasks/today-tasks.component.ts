@@ -316,6 +316,7 @@ export class TodayTasksComponent implements OnInit {
   tasks: TaskPreview[] = [];
   showTaskDetail: boolean = false;
   selectedTaskId: number | null = null;
+  doneTaskId: number | null = null;
   loading = false;
 
   constructor(
@@ -370,33 +371,39 @@ export class TodayTasksComponent implements OnInit {
   }
 
   markAsDone(id: number): void {
-    // Only mark as done if it's not already done
-    if (!this.filteredTasks.find(task => task.id === id)?.done) {
+    // Guardar el ID de la tarea completada
+    this.doneTaskId = id;
+    
+    // Obtener la tarea actual usando doneTaskId
+    const task = this.filteredTasks.find(t => t.id === this.doneTaskId);
+    
+    if (!task) {
+      console.error('Tarea no encontrada con ID:', this.doneTaskId);
+      return;
+    }
+    
+    // Solo marcar como completada si no lo está
+    if (!task.done) {
       this.loading = true;
-      this.taskService.markTaskAsDone(id).subscribe({
-        next: () => {
-          // Update the task locally to prevent flickering
-          const taskIndex = this.filteredTasks.findIndex(task => task.id === id);
-          if (taskIndex !== -1) {
-            this.filteredTasks[taskIndex].done = true;
-          }
+      // Usar doneTaskId en la petición
+      this.taskService.markTaskAsDone(this.doneTaskId!).subscribe({
+        next: (updatedTask) => {
+          // Actualizar la tarea localmente usando el caché
+          this.filteredTasks = this.filteredTasks.map(t => 
+            t.id === this.doneTaskId ? updatedTask : t
+          );
           
-          // Call addStrike after marking task as done
+          // Agregar strike después de completar la tarea
           this.authService.addStrike().subscribe({
             next: (response) => {
-              if (response && response.streak && response.date) {
-                alert(`¡Enhorabuena! Completaste tus tareas de hoy. Racha: ${response.streak} días`);
-              }
+              // Mostrar celebración de racha
+              this.loading = false;
             },
             error: (error) => {
               console.error('Error adding strike:', error);
+              this.loading = false;
             }
           });
-          
-          // Add a small delay before refreshing to ensure local state update is completed
-          setTimeout(() => {
-            this.loadTasks(); // Refresh the list
-          }, 100);
         },
         error: (error) => {
           console.error('Error marking task as done:', error);

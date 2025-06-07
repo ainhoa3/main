@@ -17,22 +17,24 @@ interface StreakPeriod {
       <h3>Línea de tiempo de rachas</h3>
       <div class="timeline">
         <div *ngFor="let streak of streaks" class="streak-item">
-          <div class="streak-dot"></div>
+          <div class="streak-dot" [ngClass]="{'streak-dot-broken': streak.days === 0}"></div>
           <div class="streak-content">
             <div class="streak-dates">
-              {{ formatDate(streak.startDate) }} - {{ formatDate(streak.endDate) }}
+              {{ formatDate(streak.startDate) }}
+              <span *ngIf="streak.startDate !== streak.endDate"> - {{ formatDate(streak.endDate) }}</span>
             </div>
             <div class="streak-duration">
-              {{ streak.days }} día{{ streak.days > 1 ? 's' : '' }}
+              <span *ngIf="streak.days === 0">Racha rota</span>
+              <span *ngIf="streak.days > 0">{{ streak.days }} día{{ streak.days > 1 ? 's' : '' }}</span>
             </div>
-            <div class="streak-bar" [style.width]="calculateBarWidth(streak.days)"></div>
+            <div class="streak-bar" *ngIf="streak.days > 0" [style.width]="calculateBarWidth(streak.days)"></div>
           </div>
         </div>
       </div>
     </div>
     
     <div *ngIf="!streaks || streaks.length === 0" class="no-streaks">
-      No hay rachas registradas este mes.
+      No hay strikes registrados este mes.
     </div>
   `,
   styles: [`
@@ -86,6 +88,10 @@ interface StreakPeriod {
       z-index: 1;
     }
     
+    .streak-dot-broken {
+      background: #ff4444;
+    }
+    
     .streak-content {
       background: #f9f9f9;
       border-radius: 6px;
@@ -137,57 +143,65 @@ export class StreakTimelineComponent implements OnChanges {
       return;
     }
 
-    // Ordenar las fechas de los strikes
-    const dates = this.monthlyStrikes
-      .map(strike => new Date(strike.date))
-      .sort((a, b) => a.getTime() - b.getTime());
-
-    if (dates.length === 0) {
-      this.streaks = [];
-      return;
-    }
+    // Ordenar los strikes por fecha (de más reciente a más viejo)
+    const sortedStrikes = [...this.monthlyStrikes].sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
 
     const streaks: StreakPeriod[] = [];
-    let currentStreak: StreakPeriod | null = null;
-    const oneDay = 24 * 60 * 60 * 1000; // milisegundos en un día
+    let currentGroup: { startDate: Date, endDate: Date, maxDays: number } | null = null;
 
-    for (let i = 0; i < dates.length; i++) {
-      const currentDate = dates[i];
+    // Procesar los strikes
+    for (const strike of sortedStrikes) {
+      const date = new Date(strike.date);
       
-      if (!currentStreak) {
-        // Iniciar una nueva racha
-        currentStreak = {
-          startDate: currentDate,
-          endDate: currentDate,
-          days: 1
-        };
+      if (strike.streak === 0) {
+        // Si es una racha rota, la mostramos como un punto individual
+        streaks.push({
+          startDate: date,
+          endDate: date,
+          days: 0
+        });
       } else {
-        const prevDate = new Date(dates[i - 1]);
-        const diffDays = Math.round(Math.abs((currentDate.getTime() - prevDate.getTime()) / oneDay));
-        
-        if (diffDays === 1) {
-          // Extender la racha actual
-          currentStreak.endDate = currentDate;
-          currentStreak.days++;
-        } else if (diffDays > 1) {
-          // Guardar la racha actual y comenzar una nueva
-          streaks.push({...currentStreak});
-          currentStreak = {
-            startDate: currentDate,
-            endDate: currentDate,
-            days: 1
-          };
+        // Si es una racha válida (distinta de 0)
+        if (!currentGroup) {
+          // Iniciar un nuevo grupo
+          currentGroup = { startDate: date, endDate: date, maxDays: strike.streak };
+        } else {
+          // Si es consecutivo con el grupo actual
+          const lastDate = currentGroup.endDate;
+          const diffDays = Math.round(Math.abs((date.getTime() - lastDate.getTime()) / (24 * 60 * 60 * 1000)));
+          
+          if (diffDays === 1) {
+            // Extender el grupo
+            currentGroup.endDate = date;
+            currentGroup.maxDays = Math.max(currentGroup.maxDays, strike.streak);
+          } else {
+            // Guardar el grupo actual y empezar uno nuevo
+            streaks.push({
+              startDate: currentGroup.startDate,
+              endDate: currentGroup.endDate,
+              days: currentGroup.maxDays
+            });
+            currentGroup = { startDate: date, endDate: date, maxDays: strike.streak };
+          }
         }
-        // Si diffDays es 0, es el mismo día, lo ignoramos
       }
     }
 
-    // Asegurarse de agregar la última racha
-    if (currentStreak) {
-      streaks.push(currentStreak);
+    // Asegurarse de agregar el último grupo
+    if (currentGroup) {
+      streaks.push({
+        startDate: currentGroup.startDate,
+        endDate: currentGroup.endDate,
+        days: currentGroup.maxDays
+      });
     }
 
-    this.streaks = streaks.sort((a, b) => b.days - a.days);
+    // Ordenar los strikes resultantes por fecha
+    this.streaks = streaks.sort((a, b) => 
+      b.startDate.getTime() - a.startDate.getTime()
+    );
   }
 
   formatDate(date: Date): string {
