@@ -70,14 +70,7 @@ import { OnInit } from '@angular/core';
                   </div>
                 </div>
                 
-                <div class="habit-actions mt-4">
-                  <button type="button" class="btn btn-outline-danger" 
-                          (click)="deleteHabit(habitDetail.id)"
-                          [disabled]="isDeleting">
-                    <i class="fas fa-trash-alt me-2"></i>
-                    {{ isDeleting ? 'Eliminando...' : 'Eliminar Hábito' }}
-                  </button>
-                </div>
+                
               </div>
 
               <form *ngIf="isEditing && habitForm" [formGroup]="habitForm" class="edit-form">
@@ -121,6 +114,14 @@ import { OnInit } from '@angular/core';
               </form>
             </div>
             <div class="modal-footer">
+            <div class="habit-actions mt-4">
+                  <button type="button" class="btn btn-outline-danger" 
+                          (click)="habitDetail && deleteHabit(habitDetail.id)"
+                          [disabled]="isDeleting || !habitDetail">
+                    <i class="fas fa-trash-alt me-2"></i>
+                    {{ isDeleting ? 'Eliminando...' : 'Eliminar Hábito' }}
+                  </button>
+                </div>
               <button *ngIf="!isEditing" class="btn btn-outline" (click)="startEditing()">Editar</button>
               <button *ngIf="isEditing" class="btn btn-outline" (click)="cancelEdit()">Cancelar</button>
               <button *ngIf="isEditing" class="btn btn-primary" (click)="saveHabit()" [disabled]="habitForm.invalid">Guardar</button>
