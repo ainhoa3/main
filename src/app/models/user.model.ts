@@ -2,7 +2,9 @@ export interface User {
   id: number;
   username: string;
   email: string;
+  userEmail: string;
   streak: number;
+  preference: number;
 }
 
 export interface CredencialesUserDTO {
@@ -18,8 +20,9 @@ export interface AuthResponse {
 
 export interface UserUpdatingDTO {
   id: number;
-  preference?: string;
+  preference?: number;
   username?: string;
   email?: string;
+  userEmail?: string;
   streak?: number;
 }

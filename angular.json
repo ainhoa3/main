@@ -30,7 +30,8 @@
             "assets": [
               "src/favicon.ico",
               "src/assets",
-              "src/_redirects"
+              "src/_redirects",
+              "src/manifest.webmanifest"
             ],
             "index": "src/index.html",
             "browser": "src/main.ts",
