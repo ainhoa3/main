@@ -131,14 +131,16 @@ import { OnInit } from '@angular/core';
       </ng-template>
       
       <div class="search-container">
-        <input 
-          type="text" 
-          [(ngModel)]="searchTerm" 
-          placeholder="Buscar tareas o hábitos..." 
-          class="search-input"
-          (keyup.enter)="search()"
-        >
-        <button class="btn btn-primary" (click)="search()">Buscar</button>
+        <div class="search-flex">
+          <input 
+            type="text" 
+            [(ngModel)]="searchTerm" 
+            placeholder="Buscar tareas o hábitos..." 
+            class="search-input"
+            (keyup.enter)="search()"
+          >
+          <button class="btn btn-search" (click)="search()">Buscar</button>
+        </div>
       </div>
 
       <div class="results-container">
@@ -198,6 +200,14 @@ import { OnInit } from '@angular/core';
     </div>
   `,
   styles: [`
+    :host {
+      display: block;
+      width: 100%;
+      min-height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
     .search-page {
       padding: 2rem;
       min-height: calc(100vh - 70px);
@@ -438,41 +448,39 @@ import { OnInit } from '@angular/core';
     }
 
     .search-container {
-      display: flex;
-      gap: 1rem;
+      margin-top: 20px;
       width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 1rem 0;
+    }
+
+    .search-flex {
+      width: 100%;
+      display: flex;
+      gap: 10px;
+      align-items: center;
     }
 
     .search-input {
       flex: 1;
-      padding: 0.75rem 1rem;
-      font-size: 1rem;
-      border: 1px solid #ced4da;
-      border-radius: 0.25rem;
-      transition: border-color 0.15s ease-in-out;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      font-size: 16px;
+      box-sizing: border-box;
     }
 
-    .btn-primary {
-      color: #fff;
-      background-color: #2ecc71;
-      border-color: #2ecc71;
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.25rem;
-      transition: all 0.2s ease;
-    }
-
-    .btn-primary:hover {
+    .btn-search {
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 16px;
+      text-align: center;
       background-color: #27ae60;
       border-color: #27ae60;
-      transform: translateY(-1px);
+      color: white;
     }
 
-    .search-input:focus {
+    .btn-search:hover {
+      background-color: #2ecc71;
       border-color: #2ecc71;
-      box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
     }
 
     .results-container {
@@ -772,6 +780,34 @@ import { OnInit } from '@angular/core';
     @media (min-width: 768px) {
       .results-container {
         grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .search-page {
+        padding: 15px;
+      }
+
+      .search-flex {
+        flex-direction: column;
+      }
+
+      .search-input {
+        width: 100%;
+        padding: 15px;
+      }
+
+      .btn-search {
+        width: 100%;
+        padding: 14px;
+      }
+
+      .results-container {
+        padding: 0 10px;
+      }
+
+      .result-item {
+        padding: 15px;
       }
     }
   `]
