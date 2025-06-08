@@ -9,8 +9,7 @@ import { UserUpdatingDTO, User } from '../../models/user.model';
 type EditableField = 'username' | 'userEmail' | 'preference';
 
 interface UserWithPreference extends User {
-  userEmail?: string;
-  preference?: number | string;
+  // No necesitamos añadir nada más ya que ya extiende de User
 }
 
 interface SettingsForms {
@@ -41,8 +40,9 @@ export class SettingsComponent implements OnInit {
     id: 0,
     username: '',
     email: '',
+    userEmail: '',
     streak: 0,
-    preference: ''
+    preference: 0
   };
 
   // Preference options for the slider
@@ -72,15 +72,16 @@ export class SettingsComponent implements OnInit {
   }
 
   private initializeForms(): SettingsForms {
+    const userEmail = this.currentUser.userEmail || this.currentUser.email || localStorage.getItem('userEmail') || '';
     return {
       username: this.fb.group({
         username: [this.currentUser.username, [Validators.required]]
       }),
       userEmail: this.fb.group({
-        userEmail: [this.currentUser.userEmail || this.currentUser.email, [Validators.required, Validators.email]]
+        userEmail: [userEmail, [Validators.required, Validators.email]]
       }),
       preference: this.fb.group({
-        preference: [this.currentUser.preference !== undefined ? Number(this.currentUser.preference) : 1, [Validators.required]]
+        preference: [Number(this.currentUser.preference) || 1, [Validators.required]]
       })
     };
   }
@@ -95,7 +96,7 @@ export class SettingsComponent implements OnInit {
           this.currentUser = {
             ...this.currentUser,
             ...userData,
-            preference: userData.preference || ''
+            preference: Number(userData.preference) || 0
           };
           this.updateForms();
         }

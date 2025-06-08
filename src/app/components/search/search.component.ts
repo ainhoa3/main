@@ -40,7 +40,7 @@ import { OnInit } from '@angular/core';
 
       <!-- Modal de Detalle de Hábito -->
       <ng-template #modalContent>
-        <div class="modal-backdrop" (click)="onBackdropClick($event)">
+        <div class="modal-backdrop">
           <div class="modal-content habit-detail">
             <div class="modal-header">
               <h2>{{ isEditing ? 'Editar Hábito' : 'Detalle de Hábito' }}</h2>
@@ -70,14 +70,7 @@ import { OnInit } from '@angular/core';
                   </div>
                 </div>
                 
-                <div class="habit-actions mt-4">
-                  <button type="button" class="btn btn-outline-danger" 
-                          (click)="deleteHabit(habitDetail.id)"
-                          [disabled]="isDeleting">
-                    <i class="fas fa-trash-alt me-2"></i>
-                    {{ isDeleting ? 'Eliminando...' : 'Eliminar Hábito' }}
-                  </button>
-                </div>
+                
               </div>
 
               <form *ngIf="isEditing && habitForm" [formGroup]="habitForm" class="edit-form">
@@ -121,6 +114,14 @@ import { OnInit } from '@angular/core';
               </form>
             </div>
             <div class="modal-footer">
+            <div class="habit-actions mt-4">
+                  <button type="button" class="btn btn-outline-danger" 
+                          (click)="habitDetail && deleteHabit(habitDetail.id)"
+                          [disabled]="isDeleting || !habitDetail">
+                    <i class="fas fa-trash-alt me-2"></i>
+                    {{ isDeleting ? 'Eliminando...' : 'Eliminar Hábito' }}
+                  </button>
+                </div>
               <button *ngIf="!isEditing" class="btn btn-outline" (click)="startEditing()">Editar</button>
               <button *ngIf="isEditing" class="btn btn-outline" (click)="cancelEdit()">Cancelar</button>
               <button *ngIf="isEditing" class="btn btn-primary" (click)="saveHabit()" [disabled]="habitForm.invalid">Guardar</button>
@@ -131,14 +132,16 @@ import { OnInit } from '@angular/core';
       </ng-template>
       
       <div class="search-container">
-        <input 
-          type="text" 
-          [(ngModel)]="searchTerm" 
-          placeholder="Buscar tareas o hábitos..." 
-          class="search-input"
-          (keyup.enter)="search()"
-        >
-        <button class="btn btn-primary" (click)="search()">Buscar</button>
+        <div class="search-flex">
+          <input 
+            type="text" 
+            [(ngModel)]="searchTerm" 
+            placeholder="Buscar tareas o hábitos..." 
+            class="search-input"
+            (keyup.enter)="search()"
+          >
+          <button class="btn btn-search" (click)="search()">Buscar</button>
+        </div>
       </div>
 
       <div class="results-container">
@@ -198,6 +201,31 @@ import { OnInit } from '@angular/core';
     </div>
   `,
   styles: [`
+    /* Override NgbModal backdrop */
+    .modal-backdrop {
+      z-index: 1000 !important;
+    }
+
+    ngb-modal-backdrop {
+      z-index: 1000 !important;
+    }
+
+    .modal-backdrop.fade {
+      z-index: 1000 !important;
+    }
+
+    .modal-backdrop.show {
+      z-index: 1000 !important;
+    }
+
+    :host {
+      display: block;
+      width: 100%;
+      min-height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
     .search-page {
       padding: 2rem;
       min-height: calc(100vh - 70px);
@@ -212,28 +240,32 @@ import { OnInit } from '@angular/core';
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 1);
+      background: rgba(0, 0, 0, 0.5);
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 1050;
+      z-index: 1000;
     }
 
     .habit-detail {
       background: white;
+      padding: 20px;
       border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
       max-width: 600px;
-      margin: 1rem;
       width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
     }
 
     .modal-header {
-      padding: 1.5rem;
-      border-bottom: 1px solid #e0e0e0;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
     }
 
     .modal-header h2 {
@@ -245,18 +277,19 @@ import { OnInit } from '@angular/core';
     .close-btn {
       background: none;
       border: none;
-      font-size: 1.5rem;
+      font-size: 24px;
       cursor: pointer;
-      color: #666;
-      padding: 0.5rem;
+      padding: 5px;
+      color: #6c757d;
+      transition: color 0.2s;
     }
 
     .close-btn:hover {
-      color: #333;
+      color: #343a40;
     }
 
     .modal-body {
-      padding: 1.5rem;
+      margin-bottom: 20px;
     }
 
     .habit-view {
@@ -438,41 +471,39 @@ import { OnInit } from '@angular/core';
     }
 
     .search-container {
-      display: flex;
-      gap: 1rem;
+      margin-top: 20px;
       width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 1rem 0;
+    }
+
+    .search-flex {
+      width: 100%;
+      display: flex;
+      gap: 10px;
+      align-items: center;
     }
 
     .search-input {
       flex: 1;
-      padding: 0.75rem 1rem;
-      font-size: 1rem;
-      border: 1px solid #ced4da;
-      border-radius: 0.25rem;
-      transition: border-color 0.15s ease-in-out;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      font-size: 16px;
+      box-sizing: border-box;
     }
 
-    .btn-primary {
-      color: #fff;
-      background-color: #2ecc71;
-      border-color: #2ecc71;
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.25rem;
-      transition: all 0.2s ease;
-    }
-
-    .btn-primary:hover {
+    .btn-search {
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 16px;
+      text-align: center;
       background-color: #27ae60;
       border-color: #27ae60;
-      transform: translateY(-1px);
+      color: white;
     }
 
-    .search-input:focus {
+    .btn-search:hover {
+      background-color: #2ecc71;
       border-color: #2ecc71;
-      box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
     }
 
     .results-container {
@@ -774,6 +805,34 @@ import { OnInit } from '@angular/core';
         grid-template-columns: 1fr 1fr;
       }
     }
+
+    @media (max-width: 768px) {
+      .search-page {
+        padding: 15px;
+      }
+
+      .search-flex {
+        flex-direction: column;
+      }
+
+      .search-input {
+        width: 100%;
+        padding: 15px;
+      }
+
+      .btn-search {
+        width: 100%;
+        padding: 14px;
+      }
+
+      .results-container {
+        padding: 0 10px;
+      }
+
+      .result-item {
+        padding: 15px;
+      }
+    }
   `]
 })
 export class SearchComponent implements OnInit {
@@ -796,6 +855,17 @@ export class SearchComponent implements OnInit {
     this.searchForm = this.fb.group({
       query: ['', Validators.required],
       environment: [0] // Default to Work environment (0)
+    });
+  }
+
+  private initializeHabitForm(habit: Habit): void {
+    this.habitForm = this.fb.group({
+      title: [habit.title, [Validators.required]],
+      description: [habit.description],
+      _Environment: [habit._Environment],
+      programmDays: [habit.programmDays, [Validators.min(1)]],
+      lastDay: [habit.lastDay],
+      done: [habit.done]
     });
   }
 
@@ -889,37 +959,42 @@ export class SearchComponent implements OnInit {
     this.showTaskDetail = false;
   }
 
-  openHabitDetail(habitId: number): void {
+  openHabitDetail(habitId: number) {
     this.habitService.getHabit(habitId).subscribe({
-      next: (habit: Habit) => {
-        this.openHabitModal(habit);
+      next: (habit) => {
+        this.habitDetail = habit;
+        this.isEditing = false;
+        this.initializeHabitForm(habit);
+        
+        // Abrir el modal sin backdrop de NgbModal
+        this.modalRef = this.modalService.open(this.habitModalContent, { 
+          centered: true,
+          backdrop: 'static',
+          keyboard: false,
+          modalDialogClass: 'custom-modal'
+        });
+        
+        // Ocultar el backdrop de NgbModal
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+          (backdrop as HTMLElement).style.display = 'none';
+        }
       },
       error: (error) => {
-        console.error('Error loading habit details:', error);
+        console.error('Error al cargar el hábito:', error);
       }
     });
   }
 
-  openHabitModal(habit: any): void {
-    this.habitDetail = { ...habit };
-    this.isEditing = false;
-    if (this.habitModalContent) {
-      this.modalRef = this.modalService.open(this.habitModalContent, { size: 'lg' });
-    }
-  }
-
-  closeHabitModal(): void {
+  closeHabitModal() {
     if (this.modalRef) {
       this.modalRef.close();
       this.modalRef = null;
-    }
-    this.habitDetail = null;
-    this.isEditing = false;
-  }
-
-  onBackdropClick(event: MouseEvent): void {
-    if (this.modalRef && (event.target as HTMLElement).classList.contains('modal-backdrop')) {
-      this.modalRef.close();
+      // Limpiar cualquier estilo de backdrop residual
+      const backdrop = document.querySelector('.modal-backdrop');
+      if (backdrop) {
+        backdrop.remove();
+      }
     }
   }
 

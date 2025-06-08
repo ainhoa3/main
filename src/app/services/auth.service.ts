@@ -74,9 +74,14 @@ export class AuthService {
             const user: User = {
               id: apiUser.id,
               username: apiUser.username,
-              email: apiUser.email,
-              streak: apiUser.streak
+              email: apiUser.userEmail,
+              userEmail: apiUser.userEmail,
+              streak: apiUser.streak,
+              preference: apiUser.preference
             };
+            
+            // Save user data to localStorage
+            localStorage.setItem('user', JSON.stringify(apiUser));
             
             // Update current user subject
             this.currentUserSubject.next(user);
@@ -146,6 +151,16 @@ export class AuthService {
       tap(user => {
         // Cache the user data from API
         this.cacheService.setUser(user);
+        
+        // Update current user subject with all properties
+        this.currentUserSubject.next({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          userEmail: user.userEmail,
+          streak: user.streak,
+          preference: user.preference
+        });
       })
     );
   }

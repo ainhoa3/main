@@ -17,14 +17,7 @@ Chart.register(...registerables);
   template: `
     <div class="streak-metrics-container">
       <app-spinner *ngIf="loading"></app-spinner>
-      <div class="controls" *ngIf="!loading">
-        <button class="btn btn-filter" [class.selected]="view === 'year'" (click)="setView('year')">
-          Ver por año
-        </button>
-        <button class="btn btn-filter" [class.selected]="view === 'month'" (click)="setView('month')">
-          Ver por mes
-        </button>
-      </div>
+      
 
       <div class="stats-container">
         <div class="stat-item">
