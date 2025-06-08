@@ -108,6 +108,8 @@ import { SpinnerComponent } from '../../components/shared/spinner/spinner.compon
       border-radius: var(--border-radius-md);
       box-shadow: var(--shadow-md);
       overflow: hidden;
+      width: 100%;
+      max-width: 100%;
     }
 
     .weekdays {
@@ -126,6 +128,9 @@ import { SpinnerComponent } from '../../components/shared/spinner/spinner.compon
     .days {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      width: 100%;
+      max-width: 100%;
     }
 
     .day {
@@ -134,6 +139,10 @@ import { SpinnerComponent } from '../../components/shared/spinner/spinner.compon
       padding: 0.5rem;
       cursor: pointer;
       transition: background-color var(--transition-fast);
+      width: 100%;
+      box-sizing: border-box;
+      position: relative;
+      display: block;
     }
 
     .day:hover {
@@ -173,6 +182,12 @@ import { SpinnerComponent } from '../../components/shared/spinner/spinner.compon
     .day-tasks {
       font-size: 0.8rem;
       overflow: hidden;
+      position: absolute;
+      top: 2rem;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 0 0.5rem;
     }
 
     .day-task {
@@ -183,6 +198,7 @@ import { SpinnerComponent } from '../../components/shared/spinner/spinner.compon
       overflow: hidden;
       text-overflow: ellipsis;
       background-color: rgba(46, 204, 113, 0.1);
+      width: 100%;
     }
 
     .more-tasks {

@@ -124,10 +124,37 @@ import { StreakCelebrationComponent } from './components/streak-celebration/stre
   `]
 })
 export class App implements OnInit {
+  @ViewChild('sidebar') sidebar!: SidebarComponent;
   isSidebarCollapsed = false;
+  isMobile = false;
   isLoggedIn = false;
-  isLandingPage = true;
-  isMobile = window.innerWidth < 768;
+  isLandingPage = false;
+  currentTitle = 'DailyFlow';
+  showStreakCelebration = false;
+
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private pageTitleService: PageTitleService
+  ) {
+    // Manejar el evento de instalación de la PWA
+    let deferredPrompt: any;
+    
+    window.addEventListener('beforeinstallprompt', (event: Event) => {
+      event.preventDefault();
+      deferredPrompt = event;
+      console.log('PWA instalable');
+    });
+
+    // Manejar el evento de instalación exitosa
+    window.addEventListener('appinstalled', () => {
+      console.log('¡PWA instalada correctamente!');
+      deferredPrompt = null;
+    });
+
+    // Inicializar el estado móvil
+    this.checkIfMobile();
+  }
 
   @HostListener('window:resize', ['$event'])
   onResize() {
@@ -137,12 +164,6 @@ export class App implements OnInit {
   private checkIfMobile() {
     this.isMobile = window.innerWidth < 768;
   }
-
-  constructor(
-    private authService: AuthService,
-    private router: Router,
-    private pageTitleService: PageTitleService
-  ) {}
 
   ngOnInit(): void {
     this.checkAuthStatus();
