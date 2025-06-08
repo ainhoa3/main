@@ -40,7 +40,7 @@ import { OnInit } from '@angular/core';
 
       <!-- Modal de Detalle de Hábito -->
       <ng-template #modalContent>
-        <div class="modal-backdrop" (click)="onBackdropClick($event)">
+        <div class="modal-backdrop">
           <div class="modal-content habit-detail">
             <div class="modal-header">
               <h2>{{ isEditing ? 'Editar Hábito' : 'Detalle de Hábito' }}</h2>
@@ -200,6 +200,23 @@ import { OnInit } from '@angular/core';
     </div>
   `,
   styles: [`
+    /* Override NgbModal backdrop */
+    .modal-backdrop {
+      z-index: 1000 !important;
+    }
+
+    ngb-modal-backdrop {
+      z-index: 1000 !important;
+    }
+
+    .modal-backdrop.fade {
+      z-index: 1000 !important;
+    }
+
+    .modal-backdrop.show {
+      z-index: 1000 !important;
+    }
+
     :host {
       display: block;
       width: 100%;
@@ -222,28 +239,32 @@ import { OnInit } from '@angular/core';
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 1);
+      background: rgba(0, 0, 0, 0.5);
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 1050;
+      z-index: 1000;
     }
 
     .habit-detail {
       background: white;
+      padding: 20px;
       border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
       max-width: 600px;
-      margin: 1rem;
       width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
     }
 
     .modal-header {
-      padding: 1.5rem;
-      border-bottom: 1px solid #e0e0e0;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
     }
 
     .modal-header h2 {
@@ -255,18 +276,19 @@ import { OnInit } from '@angular/core';
     .close-btn {
       background: none;
       border: none;
-      font-size: 1.5rem;
+      font-size: 24px;
       cursor: pointer;
-      color: #666;
-      padding: 0.5rem;
+      padding: 5px;
+      color: #6c757d;
+      transition: color 0.2s;
     }
 
     .close-btn:hover {
-      color: #333;
+      color: #343a40;
     }
 
     .modal-body {
-      padding: 1.5rem;
+      margin-bottom: 20px;
     }
 
     .habit-view {
@@ -835,6 +857,17 @@ export class SearchComponent implements OnInit {
     });
   }
 
+  private initializeHabitForm(habit: Habit): void {
+    this.habitForm = this.fb.group({
+      title: [habit.title, [Validators.required]],
+      description: [habit.description],
+      _Environment: [habit._Environment],
+      programmDays: [habit.programmDays, [Validators.min(1)]],
+      lastDay: [habit.lastDay],
+      done: [habit.done]
+    });
+  }
+
   @ViewChild('modalContent') habitModalContent!: TemplateRef<any>;
   modalRef: NgbModalRef | null = null;
   habitDetail: Habit | null = null;
@@ -925,37 +958,42 @@ export class SearchComponent implements OnInit {
     this.showTaskDetail = false;
   }
 
-  openHabitDetail(habitId: number): void {
+  openHabitDetail(habitId: number) {
     this.habitService.getHabit(habitId).subscribe({
-      next: (habit: Habit) => {
-        this.openHabitModal(habit);
+      next: (habit) => {
+        this.habitDetail = habit;
+        this.isEditing = false;
+        this.initializeHabitForm(habit);
+        
+        // Abrir el modal sin backdrop de NgbModal
+        this.modalRef = this.modalService.open(this.habitModalContent, { 
+          centered: true,
+          backdrop: 'static',
+          keyboard: false,
+          modalDialogClass: 'custom-modal'
+        });
+        
+        // Ocultar el backdrop de NgbModal
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+          (backdrop as HTMLElement).style.display = 'none';
+        }
       },
       error: (error) => {
-        console.error('Error loading habit details:', error);
+        console.error('Error al cargar el hábito:', error);
       }
     });
   }
 
-  openHabitModal(habit: any): void {
-    this.habitDetail = { ...habit };
-    this.isEditing = false;
-    if (this.habitModalContent) {
-      this.modalRef = this.modalService.open(this.habitModalContent, { size: 'lg' });
-    }
-  }
-
-  closeHabitModal(): void {
+  closeHabitModal() {
     if (this.modalRef) {
       this.modalRef.close();
       this.modalRef = null;
-    }
-    this.habitDetail = null;
-    this.isEditing = false;
-  }
-
-  onBackdropClick(event: MouseEvent): void {
-    if (this.modalRef && (event.target as HTMLElement).classList.contains('modal-backdrop')) {
-      this.modalRef.close();
+      // Limpiar cualquier estilo de backdrop residual
+      const backdrop = document.querySelector('.modal-backdrop');
+      if (backdrop) {
+        backdrop.remove();
+      }
     }
   }
 

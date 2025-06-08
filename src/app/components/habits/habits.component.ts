@@ -25,7 +25,6 @@ interface HabitFilter {
 })
 export class HabitsComponent implements OnInit, OnDestroy {
   @ViewChild('modalContent') modalContent!: TemplateRef<any>;
-  @ViewChild('deleteModal') deleteModalTemplate!: TemplateRef<any>;
 
   habits: Habit[] = [];
   allHabits: Habit[] = [];
@@ -175,22 +174,10 @@ export class HabitsComponent implements OnInit, OnDestroy {
   // CRUD Operations
   confirmDelete(habitId: number): void {
     if (!habitId) return;
-    
-    const modalRef = this.modalService.open(this.deleteModalTemplate, {
-      centered: true,
-      size: 'md'
-    });
-    
-    modalRef.result.then(
-      (result: string) => {
-        if (result === 'delete') {
-          this.deleteHabit(habitId);
-        }
-      },
-      () => {
-        // Dismissed
-      }
-    );
+
+    if (confirm('¿Estás seguro de que deseas eliminar este hábito? Esta acción no se puede deshacer.')) {
+      this.deleteHabit(habitId);
+    }
   }
 
   onSave(): void {
