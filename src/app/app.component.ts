@@ -18,6 +18,7 @@ import { PageTitleService } from './services/page-title.service';
         *ngIf="isLoggedIn && !isLandingPage"
         (toggleCollapse)="onSidebarToggle($event)"
         [collapsed]="isSidebarCollapsed"
+        #sidebar
       ></app-sidebar>
       <div 
         class="main-content" 
@@ -27,7 +28,11 @@ import { PageTitleService } from './services/page-title.service';
           'sidebar-expanded': isLoggedIn && !isLandingPage && !isSidebarCollapsed
         }"
       >
-        <app-header *ngIf="isLoggedIn && !isLandingPage" [pageName]="currentPageName"></app-header>
+        <app-header 
+          *ngIf="isLoggedIn && !isLandingPage" 
+          [pageName]="currentPageName"
+          (toggleSidebarEvent)="toggleSidebar()"
+        ></app-header>
         <div class="content-wrapper">
           <router-outlet></router-outlet>
         </div>
@@ -84,6 +89,7 @@ import { PageTitleService } from './services/page-title.service';
   `]
 })
 export class App {
+  @ViewChild('sidebar') sidebar!: SidebarComponent;
   isSidebarCollapsed = false;
   isLoggedIn = false;
   isLandingPage = true;
@@ -105,8 +111,17 @@ export class App {
     this.isLoggedIn = this.authService.isAuthenticated();
   }
 
-  onSidebarToggle(isCollapsed: boolean) {
-    this.isSidebarCollapsed = isCollapsed;
+  onSidebarToggle(collapsed: boolean) {
+    this.isSidebarCollapsed = collapsed;
+  }
+
+  toggleSidebar() {
+    if (this.sidebar) {
+      // Delegamos la lógica de alternar la barra lateral al componente Sidebar
+      this.sidebar.toggleSidebar();
+      // Actualizamos el estado local basado en el estado del sidebar
+      this.isSidebarCollapsed = this.sidebar.collapsed;
+    }
   }
 
   private listenToRouteChanges(): void {

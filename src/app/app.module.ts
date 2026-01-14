@@ -2,8 +2,8 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule } from '@angular/common/http';
 import { ReactiveFormsModule } from '@angular/forms';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { AppRoutingModule } from './app-routing.module';
+import { SpinnerComponent } from './components/shared/spinner/spinner.component';
 
 import { TaskService } from './services/task.service';
 import { AuthService } from './services/auth.service';
@@ -13,8 +13,8 @@ import { AuthService } from './services/auth.service';
     BrowserModule,
     HttpClientModule,
     ReactiveFormsModule,
-    NgbModule,
-    FontAwesomeModule
+    AppRoutingModule,
+    SpinnerComponent
   ],
   providers: [
     TaskService,
@@ -22,3 +22,4 @@ import { AuthService } from './services/auth.service';
   ]
 })
 export class AppModule { }
+

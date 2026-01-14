@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { TaskService } from '../../services/task.service';
@@ -17,24 +17,15 @@ import { ExtraTasksComponent } from './extra-tasks/extra-tasks.component';
   templateUrl: './tasks.component.html',
   styleUrls: ['./tasks.component.css']
 })
-export class TasksComponent implements OnInit {
+export class TasksComponent {
   loading: boolean = true;
-  activeTab: 'today' | 'extra' = 'today';
 
   constructor(
     private router: Router,
     private taskService: TaskService
   ) {}
 
-  ngOnInit(): void {
-    // Cargar datos iniciales si es necesario
-  }
-
   navigateToCreateTask(): void {
     this.router.navigate(['/create-task']);
-  }
-
-  setActiveTab(tab: 'today' | 'extra'): void {
-    this.activeTab = tab;
   }
 }

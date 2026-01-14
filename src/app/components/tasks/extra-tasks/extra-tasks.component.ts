@@ -13,28 +13,39 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
     <div class="extra-tasks-container">
       <h2 class="section-title">Tareas Extra</h2>
       <div class="tasks-filters">
-        <button class="btn btn-filter" (click)="filterEnvironment(WORK_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === WORK_ENVIRONMENT}">Trabajo</button>
-        <button class="btn btn-filter" (click)="filterEnvironment(PERSONAL_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === PERSONAL_ENVIRONMENT}">Personal</button>
-        <button class="btn btn-filter" (click)="clearFilter()" [ngClass]="{'selected': currentFilter === null}">Todos</button>
+        <div class="filters-container">
+          <button class="btn btn-filter" (click)="filterEnvironment(WORK_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === WORK_ENVIRONMENT}">
+            <span class="filter-icon">💼</span>
+            <span class="filter-text">Trabajo</span>
+          </button>
+          <button class="btn btn-filter" (click)="filterEnvironment(PERSONAL_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === PERSONAL_ENVIRONMENT}">
+            <span class="filter-icon">🏠</span>
+            <span class="filter-text">Personal</span>
+          </button>
+          <button class="btn btn-filter" (click)="clearFilter()" [ngClass]="{'selected': currentFilter === null}">
+            <span class="filter-icon">📋</span>
+            <span class="filter-text">Todos</span>
+          </button>
+        </div>
       </div>
-      <div class="tasks-container">
-        <div class="tasks-list" *ngIf="filteredTasks.length > 0">
-        <div *ngFor="let task of filteredTasks" 
-          class="task-item" 
-          [ngClass]="{'completed': task.done}"
-          (click)="openTaskDetail(task.id)">
-          <div class="task-checkbox">
-            <input 
-              type="checkbox" 
-              [checked]="task.done" 
-              (click)="$event.stopPropagation()"
-              (change)="markAsDone(task.id)"
-            >
+      <div class="tasks-list">
+        <div class="task-item" *ngFor="let task of filteredTasks" (click)="openTaskDetail(task.id)">
+          <div class="task-info">
+            <h3 class="task-title">{{ task.title }}</h3>
+            <div class="task-meta">
+              <span class="environment">{{ getEnvironmentString(task.environment) }}</span>
+              <span class="importance">Importancia: {{ task.importance }}/5</span>
+            </div>
           </div>
-          <div class="task-content">
-            <div class="task-title" [ngClass]="{'completed-title': task.done}">{{ task.title }}</div>
-            <div class="task-environment {{ task.environment === 0 ? 'work' : 'personal' }}">{{ getEnvironmentString(task.environment) }}</div>
-            <div class="task-description-tag">{{ task.description }}</div>
+          <div class="task-actions">
+            <div class="task-status">
+              <span class="status" [ngClass]="{'completed': task.done, 'pending': !task.done}">
+                {{ task.done ? 'Completada' : 'Pendiente' }}
+              </span>
+            </div>
+            <div class="task-checkbox">
+              <input type="checkbox" [checked]="task.done" (change)="markAsDone(task.id, !task.done)" (click)="$event.stopPropagation()" />
+            </div>
           </div>
         </div>
       </div>
@@ -50,8 +61,9 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
       *ngIf="showTaskDetail" 
       [taskId]="selectedTaskId" 
       (close)="closeTaskDetail()"
-      (taskUpdated)="refreshTasks()"
-    ></app-task-detail>
+      (taskUpdated)="handleTaskUpdated()"
+      (taskDeleted)="handleTaskDeleted()">
+    </app-task-detail>
   `,
   styles: [`
     .task-checkbox {
@@ -79,15 +91,70 @@ import { SpinnerComponent } from '../../shared/spinner/spinner.component';
     }
 
     .extra-tasks-container {
-      padding: 1rem;
+      display: flex;
+      flex-direction: column;
       height: 100%;
+      overflow: hidden;
+    }
+
+    .tasks-list {
+      flex: 1;
       overflow-y: auto;
+      padding-right: 0.5rem;
+      margin-right: -0.5rem;
+    }
+
+    .tasks-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .filters-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      width: 100%;
+    }
+
+    .btn-filter {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem;
+      gap: 0.5rem;
+      width: 100%;
+      background-color: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-filter:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-filter.selected {
+      background-color: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
     }
 
     .tasks-filters {
-      display: flex;
-      gap: 0.5rem;
       margin-bottom: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .filters-container {
+        flex-direction: row;
+        flex-wrap: nowrap;
+      }
+      
+      .btn-filter {
+        flex: 1;
+        min-width: 0;
+      }
     }
 
     .tasks-filters .btn-filter {
@@ -254,28 +321,21 @@ export class ExtraTasksComponent implements OnInit {
     });
   }
 
-  markAsDone(id: number): void {
-    // Only mark as done if it's not already done
-    if (!this.filteredTasks.find(task => task.id === id)?.done) {
-      this.loading = true;
-      this.taskService.markTaskAsDone(id).subscribe({
-        next: () => {
-          // Update the task locally to prevent flickering
-          const taskIndex = this.filteredTasks.findIndex(task => task.id === id);
-          if (taskIndex !== -1) {
-            this.filteredTasks[taskIndex] = {
-              ...this.filteredTasks[taskIndex],
-              done: true
-            };
-          }
-          this.loadExtraTasks(); // Refresh the list
-        },
-        error: (error) => {
-          console.error('Error marking task as done:', error);
-          this.loading = false;
+  markAsDone(id: number, done: boolean): void {
+    this.loading = true;
+    this.taskService.markTaskAsDone(id).subscribe({
+      next: () => {
+        const task = this.tasks.find(t => t.id === id);
+        if (task) {
+          task.done = done;
         }
-      });
-    }
+        this.loadExtraTasks();
+      },
+      error: (error) => {
+        console.error('Error marking task as done:', error);
+        this.loading = false;
+      }
+    });
   }
 
   filterEnvironment(environment: number): void {
@@ -299,7 +359,16 @@ export class ExtraTasksComponent implements OnInit {
     return environment === 1 ? 'Trabajo' : 'Personal';
   }
 
+  handleTaskUpdated(): void {
+    // Refresh the task list to get the latest data
+    this.loadExtraTasks();
+  }
 
+  handleTaskDeleted(): void {
+    // Close the detail view and refresh the task list
+    this.closeTaskDetail();
+    this.loadExtraTasks();
+  }
 
   getPriorityClass(priority: number): string {
     if (priority >= 7) {

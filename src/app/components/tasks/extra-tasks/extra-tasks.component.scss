@@ -1,0 +1,142 @@
+.extra-tasks-container {
+  padding: 1.5rem;
+  background-color: #f5f7fa;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  .content-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    gap: 1.25rem;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .section-title {
+    font-size: 1.375rem;
+    color: #2d3748;
+    margin: 0 0 0.5rem 0;
+    font-weight: 600;
+  }
+
+  .tasks-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    margin-bottom: 0.5rem;
+
+    .filters-container {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 1rem;
+      width: 100%;
+      padding: 0.5rem;
+
+      @media (max-width: 768px) {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      button {
+        flex: 1;
+        min-width: 100px;
+      }
+    }
+
+    .btn-filter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background-color: white;
+      color: #475569;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
+      }
+
+      &.selected {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+        color: white;
+      }
+    }
+  }
+
+  .tasks-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    margin-right: -0.5rem;
+    padding-top: 0.25rem;
+    scrollbar-width: thin;
+    scrollbar-color: #c1c1c1 transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: #c1c1c1;
+      border-radius: 3px;
+    }
+  }
+
+  .no-tasks {
+    text-align: center;
+    padding: 2rem;
+    color: #94a3b8;
+    font-size: 0.9375rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin-top: 1rem;
+  }
+
+  /* Responsive Styles */
+  @media (max-width: 1024px) {
+    padding: var(--spacing-sm);
+
+    .tasks-filters {
+      .btn-filter {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: var(--font-size-xs);
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    .task-item {
+      .task-meta {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: var(--spacing-xs) !important;
+      }
+    }
+  }
+}

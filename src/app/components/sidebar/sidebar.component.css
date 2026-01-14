@@ -23,6 +23,13 @@
   height: var(--sidebar-mobile-height);
   transform: translateY(100%);
   transition: transform var(--transition-normal);
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar.mobile {
+    display: block;
+  }
 }
 
 .sidebar.mobile.show-mobile-menu {

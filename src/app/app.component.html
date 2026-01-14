@@ -1,8 +1,12 @@
 <app-header [pageName]="pageName" (toggleSidebar)="toggleSidebar()"></app-header>
 
   <div class="app-container">
-    <main class="main-content" [class.sidebar-opened]="!sidebarCollapsed && !isMobile || showMobileMenu">
-      <router-outlet></router-outlet>
+    <main class="main-content with-sidebar" 
+          [class.sidebar-expanded]="!sidebarCollapsed && !isMobile"
+          [class.sidebar-collapsed]="sidebarCollapsed && !isMobile">
+      <div class="router-outlet-wrapper">
+        <router-outlet></router-outlet>
+      </div>
     </main>
 
     <app-sidebar [collapsed]="sidebarCollapsed" [isMobile]="isMobile" [showMobileMenu]="showMobileMenu" 

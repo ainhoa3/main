@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Router, type CanActivateFn } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 @Injectable({
@@ -8,12 +8,23 @@ import { AuthService } from '../services/auth.service';
 export class AuthGuard {
   constructor(private authService: AuthService, private router: Router) {}
 
-  canActivate: CanActivateFn = () => {
-    if (this.authService.isAuthenticated()) {
-      return true;
+  canActivate() {
+    // Verificar si el usuario está autenticado
+    const isAuthenticated = this.authService.isAuthenticated();
+    
+    // Si no está autenticado, redirigir a landing
+    if (!isAuthenticated) {
+      this.router.navigate(['/landing']);
+      return false;
     }
 
-    this.router.navigate(['/']);
-    return false;
-  };
+    // Verificar si hay un usuario actual
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      this.router.navigate(['/landing']);
+      return false;
+    }
+
+    return true;
+  }
 }

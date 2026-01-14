@@ -1,4 +1,16 @@
-<div class="sidebar" [class.collapsed]="collapsed" [class.mobile]="isMobile">
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-btn" (click)="toggleMobileMenu()" *ngIf="isMobile">
+  <i class="fas" [class.fa-bars]="!showMobileMenu" [class.fa-times]="showMobileMenu"></i>
+</button>
+
+<!-- Sidebar -->
+<div 
+  class="sidebar" 
+  [class.collapsed]="collapsed" 
+  [class.mobile]="isMobile" 
+  [class.show-mobile-menu]="showMobileMenu"
+  (click)="closeMobileMenu()"
+>
   <div class="sidebar-header">
     <div class="logo">
       <img src="assets/images/logo.svg" alt="DailyFlow Logo" class="logo-image">
@@ -48,4 +60,9 @@
   </div>
 </div>
 
-<div class="mobile-overlay" *ngIf="showMobileMenu" (click)="closeMobileMenu()"></div>
+<!-- Mobile Overlay -->
+<div 
+  class="mobile-overlay" 
+  *ngIf="isMobile && showMobileMenu" 
+  (click)="closeMobileMenu()"
+></div>

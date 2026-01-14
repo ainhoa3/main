@@ -1,5 +1,23 @@
 <div class="extra-tasks-container">
   <h2 class="section-title">Tareas Extra</h2>
+  <div class="tasks-filters">
+    <div class="filters-container">
+      <div class="button-container">
+        <button class="btn btn-filter" (click)="filterEnvironment(WORK_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === WORK_ENVIRONMENT}">
+          <span class="filter-icon">💼</span>
+          <span class="filter-text">Trabajo</span>
+        </button>
+        <button class="btn btn-filter" (click)="filterEnvironment(PERSONAL_ENVIRONMENT)" [ngClass]="{'selected': currentFilter === PERSONAL_ENVIRONMENT}">
+          <span class="filter-icon">🏠</span>
+          <span class="filter-text">Personal</span>
+        </button>
+        <button class="btn btn-filter" (click)="clearFilter()" [ngClass]="{'selected': currentFilter === null}">
+          <span class="filter-icon">📋</span>
+          <span class="filter-text">Todos</span>
+        </button>
+      </div>
+    </div>
+  </div>
   <div class="tasks-list">
     <div class="task-item" *ngFor="let task of tasks" (click)="openTaskDetail(task.id)">
       <div class="task-info">

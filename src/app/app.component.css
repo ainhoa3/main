@@ -9,21 +9,35 @@
   flex-direction: column;
   background-color: var(--background-color);
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 100vh;
+  width: 100%;
+  margin-left: 0;
 }
 
 /* Expanded state (default) */
 .main-content.with-sidebar.sidebar-expanded {
   margin-left: 260px;
+  width: calc(100% - 260px);
 }
 
 /* Collapsed state */
 .main-content.with-sidebar.sidebar-collapsed {
   margin-left: 80px;
+  width: calc(100% - 80px);
 }
 
 /* No sidebar state */
 .main-content:not(.with-sidebar) {
   margin-left: 0;
+  width: 100%;
+}
+
+.router-outlet-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  width: 100%;
 }
 
 .content-wrapper {

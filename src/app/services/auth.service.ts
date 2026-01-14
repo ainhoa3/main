@@ -4,6 +4,7 @@ import { CookieService } from './cookie.service';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { UserUpdatingDTO } from '../models/user.model';
+import { StrikeDTO } from '../models/strike.model';
 import { CredencialesUserDTO, AuthResponse, User } from '../models/user.model';
 import { jwtDecode } from 'jwt-decode';
 
@@ -11,7 +12,7 @@ import { jwtDecode } from 'jwt-decode';
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:5112/DailyFlow/api/users';
+  private apiUrl = 'https://dailyflowapi-d6ged4dtbrdbh0d6.spaincentral-01.azurewebsites.net/DailyFlow/api/users';
   private tokenKey = 'auth_token';
   private currentUserSubject = new BehaviorSubject<UserUpdatingDTO | null>(null);
   
@@ -19,6 +20,31 @@ export class AuthService {
   
   constructor(private http: HttpClient, private cookieService: CookieService) {
     this.initializeUser();
+  }
+
+  addStrike(): Observable<any> {
+    const token = this.getToken();
+    return this.http.get<any>(`${this.apiUrl}/AddStrike`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+  }
+
+  getStrikesOfYear(): Observable<StrikeDTO[]> {
+    const token = this.getToken();
+    const currentYear = new Date().getFullYear();
+    return this.http.get<StrikeDTO[]>(`${this.apiUrl}/GetStrikesByYear/${currentYear}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+  }
+
+  getStrikesOfMonth(): Observable<StrikeDTO[]> {
+    const token = this.getToken();
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
+    return this.http.get<StrikeDTO[]>(`${this.apiUrl}/GetStrikesByMonth/${currentYear}/${currentMonth}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
   }
 
   getCurrentUser(): UserUpdatingDTO | null {

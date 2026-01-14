@@ -52,7 +52,7 @@ import { DeleteIconComponent } from '../../../shared/components/delete-icon/dele
             </div>
             
             <div class="form-group">
-              <label for="dueDate">Fecha de entrega</label>
+              <label for="dueDate">Fecha Límite</label>
               <input type="date" id="dueDate" formControlName="dueDate" class="form-control">
             </div>
             

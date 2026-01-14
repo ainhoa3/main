@@ -16,13 +16,16 @@ import { HabitService } from '../../services/habit.service';
         <div class="welcome-section">
           <h1>¡Bienvenido a tu día!</h1>
           <p>¡Hola! Aquí tienes un resumen rápido de tu día.</p>
+          <p class="description">* Haz clic en tu racha para ver tus estadísticas y seguir tu progreso.</p>
           
           <div class="quick-stats">
             <div class="stats-item">
+              <p class="description">Tareas son acciones específicas que necesitas completar hoy. Nuestro algoritmo las prioriza automáticamente para ayudarte a ser más eficiente.</p>
               <p>Tienes {{todayTasksCount}} tareas hoy</p>
               <button class="btn btn-primary" (click)="goToTasks()">Ver tareas</button>
             </div>
             <div class="stats-item">
+              <p class="description">Hábitos son comportamientos que deseas cultivar y hacer parte de tu rutina. Puedes configurar la frecuencia (cada X días) que prefieras para cada hábito.</p>
               <p>Tienes {{todayHabitsCount}} hábitos hoy</p>
               <button class="btn btn-outline" (click)="goToHabits()">Ver hábitos</button>
             </div>
@@ -45,7 +48,7 @@ import { HabitService } from '../../services/habit.service';
     
     .dashboard-content {
       padding: 2rem;
-      margin-left: 250px;
+     
       min-height: calc(100vh - 70px);
     }
 
@@ -77,6 +80,13 @@ import { HabitService } from '../../services/habit.service';
       box-shadow: var(--shadow-sm);
     }
 
+    .description {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.8;
+    }
+
     .action-buttons {
       display: flex;
       gap: 1rem;
@@ -84,7 +94,7 @@ import { HabitService } from '../../services/habit.service';
 
     @media (max-width: 768px) {
       .dashboard-content {
-        margin-left: 60px;
+        
         padding: 1rem;
       }
 
